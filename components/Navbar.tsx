@@ -7,6 +7,11 @@ interface Props {
 }
 
 const Navbar: React.FC<Props> = ({ onLoginClick, hideLogin }) => {
+  const goToAdmin = () => {
+    window.history.pushState({}, '', '/admin');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] px-4 py-5 bg-white/80 backdrop-blur-xl border-b border-slate-100">
       <div className="max-w-xl mx-auto grid grid-cols-3 items-center">
@@ -25,8 +30,12 @@ const Navbar: React.FC<Props> = ({ onLoginClick, hideLogin }) => {
           )}
         </div>
         
-        {/* المنتصف */}
-        <div className="text-center flex flex-col items-center">
+        {/* المنتصف - اللوجو مع إمكانية الوصول السريع للإدارة */}
+        <div 
+          className="text-center flex flex-col items-center cursor-default select-none active:opacity-70 transition-opacity"
+          onDoubleClick={goToAdmin}
+          title="انقر مزدوجاً للدخول للإدارة"
+        >
           <div className="flex items-center gap-1.5">
             <span className="text-base font-black text-slate-900 whitespace-nowrap tracking-tight">منصة للهدايا الرقمية</span>
             <span className="text-lg">👑</span>
@@ -35,8 +44,16 @@ const Navbar: React.FC<Props> = ({ onLoginClick, hideLogin }) => {
         </div>
 
         {/* الجانب الأيسر */}
-        <div className="flex justify-end invisible pointer-events-none">
-           <div className="w-10 h-10"></div>
+        <div className="flex justify-end">
+           <button 
+            onClick={goToAdmin}
+            className="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-slate-400 transition-colors"
+            aria-label="Admin Access"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+             </svg>
+           </button>
         </div>
       </div>
     </nav>
