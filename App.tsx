@@ -23,7 +23,6 @@ const App: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isPromptingPassword, setIsPromptingPassword] = useState(false);
 
-  // جلب البيانات من "قاعدة البيانات" عند التشغيل
   useEffect(() => {
     const initDB = async () => {
       const data = await dbAPI.getConfig();
@@ -50,21 +49,21 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // دمج العملاء المضافين مع الأمثلة المعروضة
   const allExamples = useMemo(() => {
     if (!config) return [];
     
-    // الأمثلة الثابتة من الإعدادات
-    const staticExamples = config.landing.examples;
+    // 1. الأمثلة الثابتة (التوضيحية) - تظهر مع الرمز الخاص بها
+    const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // إضافة العملاء الحقيقيين (باستثناء الديمو لتجنب التكرار إذا كان موجوداً)
+    // 2. العملاء الحقيقيين - تظهر "محمية" بدون رمز
     const clientExamples: LandingExample[] = config.users
-      .filter(u => !u.id.includes('demo')) 
+      .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
         title: `صفحة هديّة لـ ${u.targetName}`,
-        pass: u.password, // سنستخدمه للتحقق ولكن لن نظهره
+        pass: u.password,
         color: 'bg-rose-600',
-        icon: '💝'
+        icon: '💝',
+        showPass: false // لا تظهر الرمز للعملاء الحقيقيين
       }));
 
     return [...staticExamples, ...clientExamples];
@@ -73,11 +72,8 @@ const App: React.FC = () => {
   const handleLogin = async (pass: string) => {
     if (path === '/admin') {
       const success = await dbAPI.authenticateAdmin(pass);
-      if (success) {
-        setIsAdminLoggedIn(true);
-      } else {
-        alert('رمز الإدمن غير صحيح');
-      }
+      if (success) setIsAdminLoggedIn(true);
+      else alert('رمز الإدمن غير صحيح');
       return;
     }
 
@@ -86,9 +82,7 @@ const App: React.FC = () => {
       setCurrentUser(user);
       setIsPromptingPassword(false);
       navigate('/view');
-    } else {
-      alert('الرمز الذي أدخلته غير صحيح');
-    }
+    } else alert('الرمز الذي أدخلته غير صحيح');
   };
 
   const handleLogout = () => {
@@ -98,22 +92,13 @@ const App: React.FC = () => {
     navigate('/');
   };
 
-  // شاشة التحميل
   if (isLoading || !config) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
         <div className="text-7xl sm:text-8xl animate-heartbeat select-none">❤️</div>
         <style>{`
-          @keyframes heartbeat {
-            0% { transform: scale(1); }
-            14% { transform: scale(1.15); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.15); }
-            70% { transform: scale(1); }
-          }
-          .animate-heartbeat {
-            animation: heartbeat 1.5s ease-in-out infinite;
-          }
+          @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
+          .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
         `}</style>
       </div>
     );
@@ -121,47 +106,16 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (path === '/links') return <LinksPage />;
-
-    if (path === '/admin') {
-      return isAdminLoggedIn ? (
-        <AdminDashboard config={config} setConfig={setConfig} onLogout={handleLogout} />
-      ) : (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <LoginGate onLogin={handleLogin} onBack={() => navigate('/')} />
-        </div>
-      );
-    }
-
-    if (path === '/view' && currentUser) {
-      return <PersonalPage data={currentUser} onLogout={handleLogout} />;
-    }
-
-    // إذا كان المستخدم يحاول فتح صفحة من "أعمالنا"
-    if (isPromptingPassword) {
-      return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <LoginGate 
-            onLogin={handleLogin} 
-            onBack={() => {
-              setIsPromptingPassword(false);
-              setActiveSection('examples');
-            }} 
-          />
-        </div>
-      );
-    }
+    if (path === '/admin') return isAdminLoggedIn ? <AdminDashboard config={config} setConfig={setConfig} onLogout={handleLogout} /> : <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => navigate('/')} /></div>;
+    if (path === '/view' && currentUser) return <PersonalPage data={currentUser} onLogout={handleLogout} />;
+    if (isPromptingPassword) return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => { setIsPromptingPassword(false); setActiveSection('examples'); }} /></div>;
 
     return (
       <div className="flex flex-col items-center">
         <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-32 animate-in fade-in duration-700">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
-          {activeSection === 'examples' && (
-            <Examples 
-              items={allExamples} 
-              onItemClick={() => setIsPromptingPassword(true)} 
-            />
-          )}
+          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={() => setIsPromptingPassword(true)} />}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}
@@ -171,11 +125,7 @@ const App: React.FC = () => {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 overflow-x-hidden font-['Cairo']" dir="rtl">
-      {renderContent()}
-    </div>
-  );
+  return <div className="min-h-screen bg-[#F8FAFC] text-slate-900 overflow-x-hidden font-['Cairo']" dir="rtl">{renderContent()}</div>;
 };
 
 export default App;

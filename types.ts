@@ -20,6 +20,7 @@ export interface LandingExample {
   pass: string;
   color: string;
   icon?: string;
+  showPass?: boolean; // خاصية جديدة لإظهار الباسورد في القائمة
 }
 
 export interface LandingContent {
@@ -41,14 +42,12 @@ export interface ChatMessage {
   text: string;
 }
 
-// Fix: Added missing StatItem interface used in Stats.tsx
 export interface StatItem {
   label: string;
   value: string;
   icon: string;
 }
 
-// Fix: Added missing ServiceCard interface used in Services.tsx
 export interface ServiceCard {
   title: string;
   description: string;

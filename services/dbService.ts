@@ -2,21 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { AdminConfig, UserPageData } from '../types';
 
-/**
- * ⚠️ تم تحديث الإعدادات بنجاح:
- * تم وضع الرابط والمفتاح الخاص بمشروعك.
- */
 const SUPABASE_URL: string = 'https://ppexeseppccfvfgzyree.supabase.co';
 const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZXhlc2VwcGNjZnZmZ3p5cmVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTYyOTYsImV4cCI6MjA4NTg3MjI5Nn0.TaIvxn2ifbyAMC5jJlHixCOG5QeOQzCjUv5MDuob2R4';
 
-// التحقق من أن المفاتيح تم إدخالها بشكل صحيح
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
-
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-if (!isSupabaseEnabled) {
-  console.warn("⚠️ تنبيه: لم يتم ربط Supabase بشكل كامل. الموقع يعمل حالياً بنمط التخزين المحلي (LocalStorage).");
-}
 
 const DB_KEY = 'r_love_platform_db';
 
@@ -24,15 +14,22 @@ const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
   users: [
     {
-      id: 'demo-1',
-      targetName: 'تجربة حية',
-      password: '1/10',
-      startDate: new Date().toISOString(),
+      id: 'demo-valentine',
+      targetName: 'هدية عيد الحب',
+      password: 'love',
+      startDate: '2024-02-14T10:00:00Z',
       songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      images: [
-        'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80'
-      ],
-      bottomMessage: 'هذا نموذج لما يمكننا تنفيذه لك ولشريك حياتك بكل حب وإتقان.'
+      images: ['https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80'],
+      bottomMessage: 'النموذج الأول لصفحاتنا الاحترافية.'
+    },
+    {
+      id: 'demo-birthday',
+      targetName: 'عيد ميلاد سعيد',
+      password: 'cake',
+      startDate: new Date().toISOString(),
+      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      images: ['https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?auto=format&fit=crop&w=800&q=80'],
+      bottomMessage: 'فاجئهم بصفحة خاصة مليانة ذكريات.'
     }
   ],
   landing: {
@@ -45,14 +42,13 @@ const INITIAL_DATA: AdminConfig = {
       { title: 'استلم هديتك', desc: 'هنبعتلك رابط الهديّة أو التطبيق الخاص بيك.', icon: '🎁' },
     ],
     examples: [
-      { title: 'هدية عيد الحب (تجربة)', pass: '1/10', color: 'bg-red-500', icon: '❤️' },
+      { title: 'نموذج عيد الحب الاحترافي', pass: 'love', color: 'bg-red-600', icon: '❤️', showPass: true },
+      { title: 'نموذج عيد ميلاد مميز', pass: 'cake', color: 'bg-amber-500', icon: '🎂', showPass: true },
     ]
   }
 };
 
 export const dbAPI = {
-  delay: (ms = 500) => new Promise(res => setTimeout(res, ms)),
-
   async getConfig(): Promise<AdminConfig> {
     if (supabase) {
       try {
@@ -77,10 +73,9 @@ export const dbAPI = {
           };
         }
       } catch (e) {
-        console.error("Supabase Fetch Error:", e);
+        console.error("Supabase Error:", e);
       }
     }
-
     const local = localStorage.getItem(DB_KEY);
     return local ? JSON.parse(local) : INITIAL_DATA;
   },
@@ -88,66 +83,36 @@ export const dbAPI = {
   async saveConfig(config: AdminConfig): Promise<boolean> {
     if (supabase) {
       try {
-        const { error: configError } = await supabase.from('site_config').upsert({
-          id: 1,
-          admin_pass: config.adminPass,
-          landing_data: config.landing
-        });
-
-        if (configError) throw configError;
-
+        await supabase.from('site_config').upsert({ id: 1, admin_pass: config.adminPass, landing_data: config.landing });
         for (const user of config.users) {
-          if (user.id.includes('demo')) continue;
-
-          // Fix: Ensure property mapping from UserPageData (camelCase) to DB columns (snake_case)
+          if (user.id.startsWith('demo-')) continue;
           await supabase.from('users_pages').upsert({
-            id: user.id,
-            target_name: user.targetName,
-            password: user.password,
-            start_date: user.startDate,
-            song_url: user.songUrl,
-            images: user.images,
+            id: user.id, target_name: user.targetName, password: user.password,
+            start_date: user.startDate, song_url: user.songUrl, images: user.images,
             bottom_message: user.bottomMessage
           });
         }
         return true;
-      } catch (e) {
-        console.error('Supabase Save Error:', e);
-      }
+      } catch (e) { console.error('Save Error:', e); }
     }
-
-    try {
-      localStorage.setItem(DB_KEY, JSON.stringify(config));
-      return true;
-    } catch (e) {
-      return false;
-    }
+    localStorage.setItem(DB_KEY, JSON.stringify(config));
+    return true;
   },
 
   async authenticateUser(pass: string): Promise<UserPageData | null> {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('users_pages')
-        .select('*')
-        .eq('password', pass)
-        .maybeSingle();
-      
-      if (data && !error) {
-        // Fix: Use correct property names for UserPageData interface (camelCase)
-        return {
-          id: data.id,
-          targetName: data.target_name,
-          password: data.password,
-          startDate: data.start_date,
-          songUrl: data.song_url,
-          images: data.images || [],
-          bottomMessage: data.bottom_message
-        };
-      }
-    }
-
     const config = await this.getConfig();
-    return config.users.find(u => u.password === pass) || null;
+    const user = config.users.find(u => u.password === pass);
+    if (user) return user;
+
+    if (supabase) {
+      const { data } = await supabase.from('users_pages').select('*').eq('password', pass).maybeSingle();
+      if (data) return {
+        id: data.id, targetName: data.target_name, password: data.password,
+        startDate: data.start_date, songUrl: data.song_url, images: data.images || [],
+        bottomMessage: data.bottom_message
+      };
+    }
+    return null;
   },
 
   async authenticateAdmin(pass: string): Promise<boolean> {
