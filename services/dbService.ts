@@ -16,14 +16,12 @@ const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : 
 
 if (!isSupabaseEnabled) {
   console.warn("⚠️ تنبيه: لم يتم ربط Supabase بشكل كامل. الموقع يعمل حالياً بنمط التخزين المحلي (LocalStorage).");
-} else {
-  console.log("✅ تم ربط Supabase بنجاح! البيانات الآن تُخزن سحابياً على مشروعك الخاص.");
 }
 
 const DB_KEY = 'r_love_platform_db';
 
 const INITIAL_DATA: AdminConfig = {
-  adminPass: 'admin123',
+  adminPass: 'Mmadmin890890',
   users: [
     {
       id: 'demo-1',
@@ -101,6 +99,7 @@ export const dbAPI = {
         for (const user of config.users) {
           if (user.id.includes('demo')) continue;
 
+          // Fix: Ensure property mapping from UserPageData (camelCase) to DB columns (snake_case)
           await supabase.from('users_pages').upsert({
             id: user.id,
             target_name: user.targetName,
@@ -134,6 +133,7 @@ export const dbAPI = {
         .maybeSingle();
       
       if (data && !error) {
+        // Fix: Use correct property names for UserPageData interface (camelCase)
         return {
           id: data.id,
           targetName: data.target_name,

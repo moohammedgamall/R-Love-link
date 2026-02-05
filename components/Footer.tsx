@@ -39,11 +39,11 @@ const Footer: React.FC = () => {
               </ul>
             </div>
             <div>
-              <h5 className="text-lg font-black mb-6 text-red-500">الإدارة</h5>
+              <h5 className="text-lg font-black mb-6 text-red-500">الدعم</h5>
               <ul className="space-y-4 text-slate-400 font-bold text-xs">
-                <li><a href="/admin" className="hover:text-rose-500 transition-colors flex items-center gap-1 opacity-50 hover:opacity-100"><span>🔒</span> لوحة التحكم</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">الخصوصية</a></li>
-                <li><a href="https://wa.me/201091931466" className="hover:text-white transition-colors">اتصل بنا</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">سياسة الخصوصية</a></li>
+                <li><a href="https://wa.me/201091931466" className="hover:text-white transition-colors">تواصل معنا</a></li>
+                <li><a href="https://www.tiktok.com/@mohamed_edge/" target="_blank" className="hover:text-white transition-colors">تيك توك</a></li>
               </ul>
             </div>
           </div>
