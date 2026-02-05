@@ -30,6 +30,24 @@ const INITIAL_DATA: AdminConfig = {
       songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
       images: ['https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?auto=format&fit=crop&w=800&q=80'],
       bottomMessage: 'فاجئهم بصفحة خاصة مليانة ذكريات.'
+    },
+    {
+      id: 'demo-grad',
+      targetName: 'احتفال التخرج',
+      password: 'grad',
+      startDate: '2024-06-15T09:00:00Z',
+      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      images: ['https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80'],
+      bottomMessage: 'فخورين بيك وبكل اللي وصلتله! 🎓'
+    },
+    {
+      id: 'demo-anniversary',
+      targetName: 'ذكرى زواجنا',
+      password: 'ever',
+      startDate: '2020-10-10T18:00:00Z',
+      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+      images: ['https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80'],
+      bottomMessage: 'أجمل سنين عمري كانت معاك. ❤️'
     }
   ],
   landing: {
@@ -44,6 +62,8 @@ const INITIAL_DATA: AdminConfig = {
     examples: [
       { title: 'نموذج عيد الحب الاحترافي', pass: 'love', color: 'bg-red-600', icon: '❤️', showPass: true },
       { title: 'نموذج عيد ميلاد مميز', pass: 'cake', color: 'bg-amber-500', icon: '🎂', showPass: true },
+      { title: 'نموذج حفل تخرج', pass: 'grad', color: 'bg-blue-600', icon: '🎓', showPass: true },
+      { title: 'نموذج ذكرى زواج فخم', pass: 'ever', color: 'bg-indigo-600', icon: '💍', showPass: true },
     ]
   }
 };

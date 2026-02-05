@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserPageData | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isPromptingPassword, setIsPromptingPassword] = useState(false);
+  const [prefilledPass, setPrefilledPass] = useState('');
 
   useEffect(() => {
     const initDB = async () => {
@@ -63,7 +64,7 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-rose-600',
         icon: '💝',
-        showPass: false // لا تظهر الرمز للعملاء الحقيقيين
+        showPass: false 
       }));
 
     return [...staticExamples, ...clientExamples];
@@ -81,8 +82,14 @@ const App: React.FC = () => {
     if (user) {
       setCurrentUser(user);
       setIsPromptingPassword(false);
+      setPrefilledPass('');
       navigate('/view');
     } else alert('الرمز الذي أدخلته غير صحيح');
+  };
+
+  const handleExampleClick = (pass?: string) => {
+    if (pass) setPrefilledPass(pass);
+    setIsPromptingPassword(true);
   };
 
   const handleLogout = () => {
@@ -108,14 +115,14 @@ const App: React.FC = () => {
     if (path === '/links') return <LinksPage />;
     if (path === '/admin') return isAdminLoggedIn ? <AdminDashboard config={config} setConfig={setConfig} onLogout={handleLogout} /> : <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => navigate('/')} /></div>;
     if (path === '/view' && currentUser) return <PersonalPage data={currentUser} onLogout={handleLogout} />;
-    if (isPromptingPassword) return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => { setIsPromptingPassword(false); setActiveSection('examples'); }} /></div>;
+    if (isPromptingPassword) return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => { setIsPromptingPassword(false); setActiveSection('examples'); }} prefilled={prefilledPass} /></div>;
 
     return (
       <div className="flex flex-col items-center">
         <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-32 animate-in fade-in duration-700">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
-          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={() => setIsPromptingPassword(true)} />}
+          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={handleExampleClick} />}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}

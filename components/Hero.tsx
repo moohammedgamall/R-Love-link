@@ -27,7 +27,8 @@ const Hero: React.FC<Props> = ({ content, onCategoryClick }) => {
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-600 tracking-tight leading-snug">
             {content.heroTitle}
           </h1>
-          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black gradient-text leading-tight">
+          {/* تم تعديل ارتفاع السطر هنا Line Height لضمان عدم قص النقاط */}
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black gradient-text py-2" style={{ lineHeight: '1.5' }}>
             {content.heroSubtitle}
           </h2>
         </div>
