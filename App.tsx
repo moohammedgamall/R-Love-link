@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Examples from './components/Examples';
@@ -12,7 +12,7 @@ import AdminDashboard from './components/AdminDashboard';
 import PersonalPage from './components/PersonalPage';
 import LinksPage from './components/LinksPage';
 import { dbAPI } from './services/dbService';
-import { AdminConfig, UserPageData } from './types';
+import { AdminConfig, UserPageData, LandingExample } from './types';
 
 const App: React.FC = () => {
   const [config, setConfig] = useState<AdminConfig | null>(null);
@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'home' | 'examples' | 'features' | 'steps' | 'order'>('home');
   const [currentUser, setCurrentUser] = useState<UserPageData | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isPromptingPassword, setIsPromptingPassword] = useState(false);
 
   // جلب البيانات من "قاعدة البيانات" عند التشغيل
   useEffect(() => {
@@ -33,7 +34,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handleLocationChange = () => setPath(window.location.pathname);
+    const handleLocationChange = () => {
+      setPath(window.location.pathname);
+      if (window.location.pathname === '/') {
+        setIsPromptingPassword(false);
+      }
+    };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
@@ -43,6 +49,26 @@ const App: React.FC = () => {
     setPath(newPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // دمج العملاء المضافين مع الأمثلة المعروضة
+  const allExamples = useMemo(() => {
+    if (!config) return [];
+    
+    // الأمثلة الثابتة من الإعدادات
+    const staticExamples = config.landing.examples;
+    
+    // إضافة العملاء الحقيقيين (باستثناء الديمو لتجنب التكرار إذا كان موجوداً)
+    const clientExamples: LandingExample[] = config.users
+      .filter(u => !u.id.includes('demo')) 
+      .map(u => ({
+        title: `صفحة هديّة لـ ${u.targetName}`,
+        pass: u.password, // سنستخدمه للتحقق ولكن لن نظهره
+        color: 'bg-rose-600',
+        icon: '💝'
+      }));
+
+    return [...staticExamples, ...clientExamples];
+  }, [config]);
 
   const handleLogin = async (pass: string) => {
     if (path === '/admin') {
@@ -58,25 +84,25 @@ const App: React.FC = () => {
     const user = await dbAPI.authenticateUser(pass);
     if (user) {
       setCurrentUser(user);
+      setIsPromptingPassword(false);
       navigate('/view');
     } else {
-      alert('الرمز غير صحيح');
+      alert('الرمز الذي أدخلته غير صحيح');
     }
   };
 
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setCurrentUser(null);
+    setIsPromptingPassword(false);
     navigate('/');
   };
 
-  // شاشة التحميل (Splash Screen) - تم تعديلها لتظهر قلب نابض فقط بدون خلفية
+  // شاشة التحميل
   if (isLoading || !config) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-        <div className="text-7xl sm:text-8xl animate-heartbeat select-none">
-          ❤️
-        </div>
+        <div className="text-7xl sm:text-8xl animate-heartbeat select-none">❤️</div>
         <style>{`
           @keyframes heartbeat {
             0% { transform: scale(1); }
@@ -110,12 +136,32 @@ const App: React.FC = () => {
       return <PersonalPage data={currentUser} onLogout={handleLogout} />;
     }
 
+    // إذا كان المستخدم يحاول فتح صفحة من "أعمالنا"
+    if (isPromptingPassword) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <LoginGate 
+            onLogin={handleLogin} 
+            onBack={() => {
+              setIsPromptingPassword(false);
+              setActiveSection('examples');
+            }} 
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center">
-        <Navbar onLoginClick={() => {}} hideLogin={true} />
+        <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-32 animate-in fade-in duration-700">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
-          {activeSection === 'examples' && <Examples items={config.landing.examples} onItemClick={handleLogin} />}
+          {activeSection === 'examples' && (
+            <Examples 
+              items={allExamples} 
+              onItemClick={() => setIsPromptingPassword(true)} 
+            />
+          )}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}
