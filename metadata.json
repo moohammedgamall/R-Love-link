@@ -1,0 +1,7 @@
+{
+  "name": "R Love - Digital Gifts Platform",
+  "description": "A compassionate platform dedicated to creating digital memories and unique gift experiences.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
