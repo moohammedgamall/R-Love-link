@@ -50,13 +50,14 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // تجميع كافة الأعمال (الأصلية والمضافة يدوياً)
   const allExamples = useMemo(() => {
     if (!config) return [];
     
-    // 1. الأمثلة الثابتة (التوضيحية) - تظهر مع الرمز الخاص بها
+    // 1. النماذج الافتراضية
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // 2. العملاء الحقيقيين (الأعمال التي تضيقها) - سنجعلها تظهر دائماً مع رمزها السري
+    // 2. الأعمال الحقيقية التي قمت بإضافتها
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
@@ -64,10 +65,9 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-rose-600',
         icon: '💝',
-        showPass: true // تم التغيير لـ true لتظل الرموز ظاهرة في صفحة أعمالنا
+        showPass: true 
       }));
 
-    // دمج القائمتين لضمان ظهور كل شيء
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
@@ -89,8 +89,12 @@ const App: React.FC = () => {
   };
 
   const handleExampleClick = (pass?: string) => {
-    if (pass) setPrefilledPass(pass);
-    setIsPromptingPassword(true);
+    if (pass) {
+      setPrefilledPass(pass);
+      handleLogin(pass); // دخول مباشر للنماذج لتسهيل العرض
+    } else {
+      setIsPromptingPassword(true);
+    }
   };
 
   const handleLogout = () => {

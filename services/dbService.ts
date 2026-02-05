@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'r_love_platform_db';
+const DB_KEY = 'r_love_platform_db_v2';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -70,10 +70,16 @@ const INITIAL_DATA: AdminConfig = {
 
 export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
-    let localData = INITIAL_DATA;
+    // البدء بالبيانات الافتراضية
+    let currentConfig = { ...INITIAL_DATA };
+    
+    // محاولة الجلب من LocalStorage أولاً (كاش محلي سريع)
     const local = localStorage.getItem(DB_KEY);
-    if (local) localData = JSON.parse(local);
+    if (local) {
+      currentConfig = JSON.parse(local);
+    }
 
+    // محاولة التحديث من Supabase إذا كان متاحاً
     if (supabase) {
       try {
         const { data: configData, error: configError } = await supabase.from('site_config').select('*').single();
@@ -90,53 +96,56 @@ export const dbAPI = {
             bottomMessage: u.bottom_message
           }));
 
-          // دمج بيانات الإدمن واللاندينج مع جميع المستخدمين (القدامى والجدد)
-          return {
+          // دمج الديمو مع المستخدمين المجلوبين
+          currentConfig = {
             adminPass: configData.admin_pass,
             landing: configData.landing_data,
             users: [...INITIAL_DATA.users, ...mappedUsers]
           };
+          
+          // تحديث الكاش المحلي لضمان الثبات
+          localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
         }
       } catch (e) {
-        console.error("Supabase Error:", e);
+        console.error("Supabase Fetch Error:", e);
       }
     }
-    return localData;
+    
+    return currentConfig;
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {
+    // 1. الحفظ في LocalStorage فوراً (أهم خطوة للثبات بعد التحديث)
+    localStorage.setItem(DB_KEY, JSON.stringify(config));
+
+    // 2. محاولة الحفظ في Supabase
     if (supabase) {
       try {
         await supabase.from('site_config').upsert({ id: 1, admin_pass: config.adminPass, landing_data: config.landing });
-        for (const user of config.users) {
-          if (user.id.startsWith('demo-')) continue;
+        
+        // حفظ المستخدمين غير الديمو فقط
+        const realUsers = config.users.filter(u => !u.id.startsWith('demo-'));
+        for (const user of realUsers) {
           await supabase.from('users_pages').upsert({
-            id: user.id, target_name: user.targetName, password: user.password,
-            start_date: user.startDate, song_url: user.songUrl, images: user.images,
+            id: user.id, 
+            target_name: user.targetName, 
+            password: user.password,
+            start_date: user.startDate, 
+            song_url: user.songUrl, 
+            images: user.images,
             bottom_message: user.bottomMessage
           });
         }
-        return true;
-      } catch (e) { console.error('Save Error:', e); }
+      } catch (e) { 
+        console.error('Supabase Save Error:', e); 
+      }
     }
-    localStorage.setItem(DB_KEY, JSON.stringify(config));
     return true;
   },
 
   async authenticateUser(pass: string): Promise<UserPageData | null> {
     const config = await this.getConfig();
-    const user = config.users.find(u => u.password === pass);
-    if (user) return user;
-
-    if (supabase) {
-      const { data } = await supabase.from('users_pages').select('*').eq('password', pass).maybeSingle();
-      if (data) return {
-        id: data.id, targetName: data.target_name, password: data.password,
-        startDate: data.start_date, songUrl: data.song_url, images: data.images || [],
-        bottomMessage: data.bottom_message
-      };
-    }
-    return null;
+    return config.users.find(u => u.password === pass) || null;
   },
 
   async authenticateAdmin(pass: string): Promise<boolean> {
