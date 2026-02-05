@@ -3,8 +3,11 @@ import React from 'react';
 
 const Order: React.FC = () => {
   const handleWhatsAppClick = () => {
-    // تم تحديث الرقم إلى الرقم المطلوب
     window.open('https://wa.me/201091931466', '_blank');
+  };
+
+  const handleTikTokClick = () => {
+    window.open('https://www.tiktok.com/@mohamed_edge/', '_blank');
   };
 
   const TikTokIcon = () => (
@@ -57,7 +60,10 @@ const Order: React.FC = () => {
           </svg>
         </button>
 
-        <button className="w-full py-6 bg-slate-100 text-slate-800 border border-slate-200 rounded-[2.5rem] font-black text-xl sm:text-2xl flex items-center justify-center gap-4 hover:bg-slate-200 transition-all active:scale-95 shadow-sm">
+        <button 
+          onClick={handleTikTokClick}
+          className="w-full py-6 bg-slate-100 text-slate-800 border border-slate-200 rounded-[2.5rem] font-black text-xl sm:text-2xl flex items-center justify-center gap-4 hover:bg-slate-200 transition-all active:scale-95 shadow-sm"
+        >
           شاهد باقي أعمالنا
           <div className="w-8 h-8 sm:w-10 sm:h-10">
             <TikTokIcon />

@@ -36,7 +36,7 @@ const BottomNav: React.FC<Props> = ({ active, setActive }) => {
   ];
 
   return (
-    <div className="fixed bottom-8 left-0 right-0 z-[200] px-4 flex justify-center pointer-events-none">
+    <div className="fixed bottom-5 left-0 right-0 z-[200] px-4 flex justify-center pointer-events-none">
       <div className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] flex items-center shadow-[0_15px_50px_rgba(0,0,0,0.1)] pointer-events-auto w-full max-w-xl transition-all duration-500 h-[72px] sm:h-[82px] border border-slate-200/60 p-1.5">
         <div className="flex items-center justify-between w-full gap-1">
           {tabs.map(tab => {

@@ -18,34 +18,45 @@
             color: #1e293b;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
+            scroll-behavior: smooth;
         }
         .ios-card {
             background: white;
-            border-radius: 2.5rem;
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.03);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .ios-card:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
         .gradient-text {
-            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .heart-pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
         .bottom-nav-blur {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(25px) saturate(200%);
-            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        .ios-input {
+            appearance: none;
+            -webkit-appearance: none;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            padding: 1rem 1.25rem;
+            transition: all 0.3s;
+        }
+        .ios-input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
         }
     </style>
 <script type="importmap">
