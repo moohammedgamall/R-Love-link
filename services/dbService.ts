@@ -70,6 +70,10 @@ const INITIAL_DATA: AdminConfig = {
 
 export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
+    let localData = INITIAL_DATA;
+    const local = localStorage.getItem(DB_KEY);
+    if (local) localData = JSON.parse(local);
+
     if (supabase) {
       try {
         const { data: configData, error: configError } = await supabase.from('site_config').select('*').single();
@@ -86,18 +90,18 @@ export const dbAPI = {
             bottomMessage: u.bottom_message
           }));
 
+          // دمج بيانات الإدمن واللاندينج مع جميع المستخدمين (القدامى والجدد)
           return {
             adminPass: configData.admin_pass,
             landing: configData.landing_data,
-            users: mappedUsers
+            users: [...INITIAL_DATA.users, ...mappedUsers]
           };
         }
       } catch (e) {
         console.error("Supabase Error:", e);
       }
     }
-    const local = localStorage.getItem(DB_KEY);
-    return local ? JSON.parse(local) : INITIAL_DATA;
+    return localData;
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {

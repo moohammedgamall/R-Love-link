@@ -56,17 +56,18 @@ const App: React.FC = () => {
     // 1. الأمثلة الثابتة (التوضيحية) - تظهر مع الرمز الخاص بها
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // 2. العملاء الحقيقيين - تظهر "محمية" بدون رمز
+    // 2. العملاء الحقيقيين (الأعمال التي تضيقها) - سنجعلها تظهر دائماً مع رمزها السري
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
-        title: `صفحة هديّة لـ ${u.targetName}`,
+        title: `هدية لـ ${u.targetName}`,
         pass: u.password,
         color: 'bg-rose-600',
         icon: '💝',
-        showPass: false 
+        showPass: true // تم التغيير لـ true لتظل الرموز ظاهرة في صفحة أعمالنا
       }));
 
+    // دمج القائمتين لضمان ظهور كل شيء
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
