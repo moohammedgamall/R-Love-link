@@ -35,13 +35,13 @@ const Footer: React.FC = () => {
               <ul className="space-y-4 text-slate-400 font-bold text-xs">
                 <li><a href="/" className="hover:text-white transition-colors">الرئيسية</a></li>
                 <li><a href="/links" className="hover:text-white transition-colors">روابط التواصل</a></li>
-                <li><a href="#examples" className="hover:text-white transition-colors">أعمالنا</a></li>
+                <li><a href="/#examples" className="hover:text-white transition-colors">أعمالنا</a></li>
               </ul>
             </div>
             <div>
-              <h5 className="text-lg font-black mb-6 text-red-500">الدعم</h5>
+              <h5 className="text-lg font-black mb-6 text-red-500">الإدارة</h5>
               <ul className="space-y-4 text-slate-400 font-bold text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">مركز المساعدة</a></li>
+                <li><a href="/admin" className="hover:text-rose-500 transition-colors flex items-center gap-1 opacity-50 hover:opacity-100"><span>🔒</span> لوحة التحكم</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">الخصوصية</a></li>
                 <li><a href="https://wa.me/201091931466" className="hover:text-white transition-colors">اتصل بنا</a></li>
               </ul>
