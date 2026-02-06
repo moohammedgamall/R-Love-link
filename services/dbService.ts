@@ -1,4 +1,24 @@
 
+/**
+ * لتحديث قاعدة البيانات وحذف النماذج التجريبية، قم بتشغيل الكود التالي في SQL Editor في Supabase:
+ * 
+ * UPDATE site_config 
+ * SET landing_data = '{
+ *     "heroTitle": "حكايتكم تستاهل",
+ *     "heroSubtitle": "ذكرى تعيش للأبد..",
+ *     "heroCta": "ابدأ تصميم هديتك الآن",
+ *     "steps": [
+ *       {"title": "اختار فكرتك", "desc": "سواء من النماذج الجاهزة أو فكرة جديدة في دماغك.", "icon": "💡"},
+ *       {"title": "ابعت فكرتك", "desc": "هنصممها في أسرع وقت ممكن وبأعلى جودة تنفيذ.", "icon": "🪄"},
+ *       {"title": "استلم هديتك", "desc": "هنبعتلك رابط الهديّة أو التطبيق الخاص بيك.", "icon": "🎁"}
+ *     ],
+ *     "examples": []
+ * }'::jsonb
+ * WHERE id = 1;
+ * 
+ * DELETE FROM users_pages WHERE id LIKE 'demo%';
+ */
+
 import { createClient } from '@supabase/supabase-js';
 import { AdminConfig, UserPageData } from '../types';
 
@@ -12,7 +32,7 @@ const DB_KEY = 'heartlink_v5_global';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
-  users: [], // تم حذف المستخدم التجريبي
+  users: [],
   landing: {
     heroTitle: 'حكايتكم تستاهل',
     heroSubtitle: 'ذكرى تعيش للأبد..',
@@ -22,7 +42,7 @@ const INITIAL_DATA: AdminConfig = {
       { title: 'ابعت فكرتك', desc: 'هنصممها في أسرع وقت ممكن وبأعلى جودة تنفيذ.', icon: '🪄' },
       { title: 'استلم هديتك', desc: 'هنبعتلك رابط الهديّة أو التطبيق الخاص بيك.', icon: '🎁' },
     ],
-    examples: [] // تم حذف النموذج الرومانسي الاحترافي من هنا
+    examples: [] 
   }
 };
 
@@ -32,7 +52,6 @@ export const dbAPI = {
     
     if (supabase) {
       try {
-        // جلب الإعدادات والعملاء في آن واحد
         const [configRes, usersRes] = await Promise.all([
           supabase.from('site_config').select('*').maybeSingle(),
           supabase.from('users_pages').select('*').order('created_at', { ascending: false })
@@ -43,7 +62,6 @@ export const dbAPI = {
           config.landing = configRes.data.landing_data;
         }
 
-        // حتى لو كانت المصفوفة فارغة، نقوم بتحديث الـ users
         if (usersRes.data) {
           const remoteUsers: UserPageData[] = usersRes.data.map((u: any) => ({
             id: u.id,
@@ -56,7 +74,6 @@ export const dbAPI = {
           }));
           
           config.users = [
-            ...INITIAL_DATA.users,
             ...remoteUsers.filter(ru => !INITIAL_DATA.users.find(du => du.id === ru.id))
           ];
           
@@ -98,7 +115,6 @@ export const dbAPI = {
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
-          // Fixed: Changed u.bottom_message to u.bottomMessage to match UserPageData interface
           bottom_message: u.bottomMessage
         }));
 
