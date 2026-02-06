@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'heartlink_final_storage_v1';
+const DB_KEY = 'heartlink_final_storage_v2';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -106,7 +106,6 @@ export const dbAPI = {
 
     if (supabase) {
       try {
-        // 1. تحديث الإعدادات العامة
         const { error: configError } = await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
@@ -115,7 +114,6 @@ export const dbAPI = {
         
         if (configError) throw configError;
 
-        // 2. تحديث قائمة المستخدمين
         const realUsers = config.users.filter(u => !u.id.startsWith('demo-')).map(u => ({
           id: u.id,
           target_name: u.targetName,
