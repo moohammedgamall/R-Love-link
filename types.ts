@@ -6,6 +6,7 @@ export interface UserPageData {
   startDate: string;
   songUrl: string;
   images: string[];
+  videos?: string[]; 
   bottomMessage: string;
 }
 
@@ -20,7 +21,7 @@ export interface LandingExample {
   pass: string;
   color: string;
   icon?: string;
-  showPass?: boolean; // خاصية جديدة لإظهار الباسورد في القائمة
+  showPass?: boolean;
 }
 
 export interface LandingContent {

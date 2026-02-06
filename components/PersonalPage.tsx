@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserPageData } from '../types';
-import { LogOut, Music, Share2, Check } from 'lucide-react';
+import { LogOut, Music, Share2, Check, Calendar, Heart } from 'lucide-react';
 
 interface Props {
   data: UserPageData;
@@ -93,7 +93,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           <div className="ios-card p-8 bg-slate-900 text-white overflow-hidden relative group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="flex flex-col items-center gap-6 relative z-10">
-              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center text-rose-500 shadow-2xl animate-bounce">
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center text-rose-50 shadow-2xl animate-bounce">
                 <Music size={40} strokeWidth={2.5} />
               </div>
               <div className="w-full">
@@ -106,12 +106,38 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          {data.images.map((img, idx) => (
-            <div key={idx} className="ios-card overflow-hidden aspect-square border-4 border-white group">
-              <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" />
+        {/* Video Gallery */}
+        {data.videos && data.videos.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 px-2">
+              <div className="w-1.5 h-6 bg-rose-600 rounded-full"></div>
+              <h3 className="font-black text-slate-800">فيديوهاتنا</h3>
             </div>
-          ))}
+            <div className="grid grid-cols-1 gap-4">
+              {data.videos.map((vid, idx) => (
+                <div key={idx} className="ios-card overflow-hidden bg-black aspect-video shadow-2xl">
+                  <video controls className="w-full h-full">
+                    <source src={vid} />
+                    متصفحك لا يدعم تشغيل الفيديو.
+                  </video>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-1.5 h-6 bg-rose-600 rounded-full"></div>
+            <h3 className="font-black text-slate-800">ألبوم الصور</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {data.images.map((img, idx) => (
+              <div key={idx} className="ios-card overflow-hidden aspect-square border-4 border-white group relative">
+                <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="ios-card p-10 bg-rose-600 text-white text-center space-y-6 relative overflow-hidden group">
@@ -120,7 +146,11 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           <p className="text-xl sm:text-2xl font-black leading-relaxed">
             "{data.bottomMessage || "حكايتنا هي أجمل قدر حصل في حياتي.."}"
           </p>
-          <p className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">Love Forever</p>
+          <div className="flex justify-center items-center gap-2">
+            <Heart fill="currentColor" size={12} className="text-rose-200" />
+            <p className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">Love Forever</p>
+            <Heart fill="currentColor" size={12} className="text-rose-200" />
+          </div>
         </div>
       </div>
     </div>

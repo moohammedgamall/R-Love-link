@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'heartlink_v5_global';
+const DB_KEY = 'heartlink_v6_global';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -39,14 +39,7 @@ export const dbAPI = {
 
         if (configRes.data) {
           config.adminPass = configRes.data.admin_pass;
-          // تصفية الأمثلة لحذف النموذج القديم برمجياً لضمان الاختفاء الفوري
-          const landing = configRes.data.landing_data;
-          if (landing && landing.examples) {
-            landing.examples = landing.examples.filter((ex: any) => 
-              ex.title !== 'نموذج رومانسي احترافي' && ex.pass !== 'love'
-            );
-          }
-          config.landing = landing;
+          config.landing = configRes.data.landing_data;
         }
 
         if (usersRes.data) {
@@ -59,11 +52,11 @@ export const dbAPI = {
               startDate: u.start_date,
               songUrl: u.song_url,
               images: u.images || [],
+              videos: u.videos || [],
               bottomMessage: u.bottom_message
             }));
           
           config.users = remoteUsers;
-          
           localStorage.setItem(DB_KEY, JSON.stringify(config));
           return config;
         }
@@ -75,16 +68,7 @@ export const dbAPI = {
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        if (parsed.landing && parsed.landing.examples) {
-          parsed.landing.examples = parsed.landing.examples.filter((ex: any) => 
-            ex.title !== 'نموذج رومانسي احترافي' && ex.pass !== 'love'
-          );
-        }
-        if (parsed.users) {
-          parsed.users = parsed.users.filter((u: any) => u.password !== 'love');
-        }
-        return parsed;
+        return JSON.parse(saved);
       } catch (e) {}
     }
 
@@ -111,6 +95,7 @@ export const dbAPI = {
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
+          videos: u.videos,
           bottom_message: u.bottomMessage
         }));
 
