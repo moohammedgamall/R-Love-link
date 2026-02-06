@@ -41,15 +41,24 @@ const INITIAL_DATA: AdminConfig = {
 export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
     let currentConfig = { ...INITIAL_DATA };
+    
+    // 1. جلب البيانات المحلية أولاً
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
-      try { currentConfig = JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.users) {
+          currentConfig = parsed;
+        }
+      } catch (e) {
+        console.error("Local parse error");
+      }
     }
 
     if (supabase) {
       try {
-        const { data: configData, error: ce } = await supabase.from('site_config').select('*').maybeSingle();
-        const { data: usersData, error: ue } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
+        const { data: configData } = await supabase.from('site_config').select('*').maybeSingle();
+        const { data: usersData } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
 
         if (configData) {
           currentConfig.adminPass = configData.admin_pass;
@@ -57,7 +66,7 @@ export const dbAPI = {
         }
 
         if (usersData) {
-          const remoteUsers = usersData.map((u: any) => ({
+          const remoteUsers: UserPageData[] = usersData.map((u: any) => ({
             id: u.id,
             targetName: u.target_name,
             password: u.password,
@@ -66,31 +75,55 @@ export const dbAPI = {
             images: u.images || [],
             bottomMessage: u.bottom_message
           }));
+          
+          // الدمج الذكي: الحفاظ على الديمو + إضافة الجديد من السحاب + الحفاظ على ما هو موجود محلياً ولم يرفع بعد
+          const localUsers = currentConfig.users;
+          
+          // نأخذ كل المستخدمين من السحاب كمرجع أساسي
+          const mergedUsers = [...remoteUsers];
+          
+          // نضيف أي مستخدم محلي غير موجود في السحاب (لم يكتمل رفعه مثلاً)
+          localUsers.forEach(lu => {
+            if (!mergedUsers.find(mu => mu.id === lu.id)) {
+              mergedUsers.push(lu);
+            }
+          });
+
+          // التأكد من وجود الديمو دائماً
           const demoUsers = INITIAL_DATA.users;
-          currentConfig.users = [...demoUsers, ...remoteUsers.filter(ru => !demoUsers.find(du => du.id === ru.id))];
+          demoUsers.forEach(du => {
+            if (!mergedUsers.find(mu => mu.id === du.id)) {
+              mergedUsers.unshift(du);
+            }
+          });
+
+          currentConfig.users = mergedUsers;
         }
+        
         localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
-      } catch (e) {
-        console.error("Fetch Sync Error:", e);
+      } catch (e) { 
+        console.error("Supabase Sync Error:", e);
       }
     }
+
     return currentConfig;
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {
+    // حفظ محلي فوري
     localStorage.setItem(DB_KEY, JSON.stringify(config));
+
     if (!supabase) return true;
 
     try {
-      // 1. مزامنة الإعدادات
-      const { error: ce } = await supabase.from('site_config').upsert({ 
+      // رفع الإعدادات
+      await supabase.from('site_config').upsert({ 
         id: 1, 
         admin_pass: config.adminPass, 
         landing_data: config.landing 
       });
-      if (ce) throw ce;
-
-      // 2. مزامنة العملاء (تصفية الديمو)
+      
+      // رفع المستخدمين الحقيقيين فقط
       const realUsers = config.users
         .filter(u => !u.id.startsWith('demo-'))
         .map(u => ({
@@ -104,12 +137,12 @@ export const dbAPI = {
         }));
 
       if (realUsers.length > 0) {
-        const { error: ue } = await supabase.from('users_pages').upsert(realUsers);
-        if (ue) throw ue;
+        const { error } = await supabase.from('users_pages').upsert(realUsers);
+        if (error) throw error;
       }
       return true;
-    } catch (e) {
-      console.error("Global Save Sync Error:", e);
+    } catch (e) { 
+      console.error("Global Save Error:", e); 
       return false;
     }
   },
@@ -117,10 +150,8 @@ export const dbAPI = {
   async deleteUser(id: string): Promise<boolean> {
     if (supabase && !id.startsWith('demo-')) {
       try {
-        const { error } = await supabase.from('users_pages').delete().eq('id', id);
-        if (error) throw error;
+        await supabase.from('users_pages').delete().eq('id', id);
       } catch (e) {
-        console.error("Delete Error:", e);
         return false;
       }
     }
@@ -130,7 +161,8 @@ export const dbAPI = {
   async authenticateUser(pass: string | null): Promise<UserPageData | null> {
     if (!pass) return null;
     const config = await this.getConfig();
-    return config.users.find(u => u.password.trim() === pass.trim()) || null;
+    const cleanPass = pass.trim();
+    return config.users.find(u => u.password.trim() === cleanPass) || null;
   },
 
   async authenticateAdmin(pass: string | null): Promise<boolean> {
