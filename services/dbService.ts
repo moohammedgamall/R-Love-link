@@ -1,24 +1,4 @@
 
-/**
- * لتحديث قاعدة البيانات وحذف النماذج التجريبية، قم بتشغيل الكود التالي في SQL Editor في Supabase:
- * 
- * UPDATE site_config 
- * SET landing_data = '{
- *     "heroTitle": "حكايتكم تستاهل",
- *     "heroSubtitle": "ذكرى تعيش للأبد..",
- *     "heroCta": "ابدأ تصميم هديتك الآن",
- *     "steps": [
- *       {"title": "اختار فكرتك", "desc": "سواء من النماذج الجاهزة أو فكرة جديدة في دماغك.", "icon": "💡"},
- *       {"title": "ابعت فكرتك", "desc": "هنصممها في أسرع وقت ممكن وبأعلى جودة تنفيذ.", "icon": "🪄"},
- *       {"title": "استلم هديتك", "desc": "هنبعتلك رابط الهديّة أو التطبيق الخاص بيك.", "icon": "🎁"}
- *     ],
- *     "examples": []
- * }'::jsonb
- * WHERE id = 1;
- * 
- * DELETE FROM users_pages WHERE id LIKE 'demo%';
- */
-
 import { createClient } from '@supabase/supabase-js';
 import { AdminConfig, UserPageData } from '../types';
 
@@ -59,23 +39,30 @@ export const dbAPI = {
 
         if (configRes.data) {
           config.adminPass = configRes.data.admin_pass;
-          config.landing = configRes.data.landing_data;
+          // تصفية الأمثلة لحذف النموذج القديم برمجياً لضمان الاختفاء الفوري
+          const landing = configRes.data.landing_data;
+          if (landing && landing.examples) {
+            landing.examples = landing.examples.filter((ex: any) => 
+              ex.title !== 'نموذج رومانسي احترافي' && ex.pass !== 'love'
+            );
+          }
+          config.landing = landing;
         }
 
         if (usersRes.data) {
-          const remoteUsers: UserPageData[] = usersRes.data.map((u: any) => ({
-            id: u.id,
-            targetName: u.target_name,
-            password: u.password,
-            startDate: u.start_date,
-            songUrl: u.song_url,
-            images: u.images || [],
-            bottomMessage: u.bottom_message
-          }));
+          const remoteUsers: UserPageData[] = usersRes.data
+            .filter((u: any) => !u.id.startsWith('demo-') && u.password !== 'love') 
+            .map((u: any) => ({
+              id: u.id,
+              targetName: u.target_name,
+              password: u.password,
+              startDate: u.start_date,
+              songUrl: u.song_url,
+              images: u.images || [],
+              bottomMessage: u.bottom_message
+            }));
           
-          config.users = [
-            ...remoteUsers.filter(ru => !INITIAL_DATA.users.find(du => du.id === ru.id))
-          ];
+          config.users = remoteUsers;
           
           localStorage.setItem(DB_KEY, JSON.stringify(config));
           return config;
@@ -88,7 +75,16 @@ export const dbAPI = {
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.landing && parsed.landing.examples) {
+          parsed.landing.examples = parsed.landing.examples.filter((ex: any) => 
+            ex.title !== 'نموذج رومانسي احترافي' && ex.pass !== 'love'
+          );
+        }
+        if (parsed.users) {
+          parsed.users = parsed.users.filter((u: any) => u.password !== 'love');
+        }
+        return parsed;
       } catch (e) {}
     }
 
@@ -107,7 +103,7 @@ export const dbAPI = {
       });
       
       const realUsers = config.users
-        .filter(u => !u.id.startsWith('demo-'))
+        .filter(u => !u.id.startsWith('demo-') && u.password !== 'love')
         .map(u => ({
           id: u.id,
           target_name: u.targetName,
