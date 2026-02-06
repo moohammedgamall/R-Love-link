@@ -53,16 +53,21 @@ const App: React.FC = () => {
 
   const allExamples = useMemo(() => {
     if (!config) return [];
+    
+    // النماذج التجريبية تفتح تلقائياً
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
+    
+    // أعمال العملاء تتطلب كلمة مرور (لا تفتح تلقائياً)
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
         title: `توثيق لـ ${u.targetName}`,
         pass: u.password,
-        color: 'bg-rose-600',
+        color: 'bg-slate-800', // لون داكن ليعبر عن الخصوصية
         icon: '❤️',
-        showPass: true 
+        showPass: false // <--- سيجبر المستخدم على إدخال الباسورد يدوياً
       }));
+    
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
@@ -77,7 +82,7 @@ const App: React.FC = () => {
       return;
     }
 
-    // محاولة البحث في البيانات المحملة حالياً أولاً لسرعة الاستجابة
+    // البحث في البيانات المحملة
     const localUser = config?.users.find(u => u.password.trim() === cleanPass);
     if (localUser) {
       setCurrentUser(localUser);
@@ -87,7 +92,7 @@ const App: React.FC = () => {
       return;
     }
 
-    // إذا لم ينجح محلياً، نحاول الاتصال بقاعدة البيانات (للتأكد من أحدث البيانات)
+    // التحقق السحابي الإضافي
     const user = await dbAPI.authenticateUser(cleanPass);
     if (user) {
       setCurrentUser(user);
@@ -95,20 +100,21 @@ const App: React.FC = () => {
       setPrefilledPass('');
       navigate('/view');
     } else {
-      if (isAuto) {
-        // إذا فشل الدخول التلقائي، لا نظهر تنبيهاً بل نفتح صفحة الدخول مع ملء الرمز للمحاولة اليدوية
-        setPrefilledPass(cleanPass);
-        setIsPromptingPassword(true);
-      } else {
+      if (!isAuto) {
         alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
+      } else {
+        // إذا كان ضغطاً تلقائياً وفشل، نفتح صفحة الدخول ليجرب المستخدم بنفسه
+        setIsPromptingPassword(true);
       }
     }
   };
 
   const handleExampleClick = (pass?: string) => {
     if (pass) {
-      handleLogin(pass, true); // استخدام الدخول التلقائي
+      // إذا كان مسموح بعرض الباسورد، نقوم بالدخول تلقائياً
+      handleLogin(pass, true);
     } else {
+      // إذا كان عملاً خاصاً، نفتح بوابة الدخول
       setPrefilledPass('');
       setIsPromptingPassword(true);
     }
@@ -123,9 +129,9 @@ const App: React.FC = () => {
 
   if (isLoading || !config) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-['Cairo']">
         <div className="text-7xl animate-pulse">❤️</div>
-        <p className="mt-4 font-black text-rose-600 animate-pulse tracking-widest">R LOVE</p>
+        <p className="mt-4 font-black text-rose-600 animate-pulse tracking-widest uppercase">R LOVE LINK</p>
       </div>
     );
   }
@@ -136,7 +142,9 @@ const App: React.FC = () => {
     if (path === '/admin') {
       return isAdminLoggedIn 
         ? <AdminDashboard config={config} setConfig={setConfig} onLogout={handleLogout} /> 
-        : <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={(p) => handleLogin(p)} onBack={() => navigate('/')} /></div>;
+        : <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <LoginGate onLogin={(p) => handleLogin(p)} onBack={() => navigate('/')} />
+          </div>;
     }
 
     if (path === '/view' && currentUser) {
@@ -144,9 +152,11 @@ const App: React.FC = () => {
     }
 
     if (isPromptingPassword) {
-      return <div className="min-h-screen bg-white/50 backdrop-blur-xl flex items-center justify-center p-4 z-[500] fixed inset-0">
-        <LoginGate onLogin={(p) => handleLogin(p)} onBack={() => setIsPromptingPassword(false)} prefilled={prefilledPass} />
-      </div>;
+      return (
+        <div className="fixed inset-0 z-[500] bg-slate-950/60 backdrop-blur-xl flex items-center justify-center p-4">
+          <LoginGate onLogin={(p) => handleLogin(p)} onBack={() => setIsPromptingPassword(false)} prefilled={prefilledPass} />
+        </div>
+      );
     }
 
     return (

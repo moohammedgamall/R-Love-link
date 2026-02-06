@@ -42,7 +42,7 @@ export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
     let currentConfig = { ...INITIAL_DATA };
     
-    // محاولة الجلب من المتصفح أولاً للعرض السريع
+    // محاولة الجلب من المتصفح للعرض اللحظي
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
       try {
@@ -52,13 +52,12 @@ export const dbAPI = {
       }
     }
 
+    // الجلب الإجباري من السحاب لضمان الحداثة
     if (supabase) {
       try {
-        console.log("Fetching from cloud...");
-        const { data: configData, error: configError } = await supabase.from('site_config').select('*').maybeSingle();
-        const { data: usersData, error: usersError } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
-
-        if (configError) throw configError;
+        console.log("Syncing with Supabase Cloud...");
+        const { data: configData } = await supabase.from('site_config').select('*').maybeSingle();
+        const { data: usersData } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
 
         if (configData) {
           currentConfig.adminPass = configData.admin_pass;
@@ -71,7 +70,7 @@ export const dbAPI = {
             targetName: u.target_name,
             password: u.password,
             startDate: u.start_date,
-            songUrl: u.song_url,
+            song_url: u.song_url,
             images: u.images || [],
             bottomMessage: u.bottom_message
           }));
@@ -81,10 +80,10 @@ export const dbAPI = {
           currentConfig.users = [...demoUsers, ...remoteUsers.filter(ru => !demoUsers.find(du => du.id === ru.id))];
         }
         
-        // تحديث التخزين المحلي ببيانات السحاب الأكيدة
+        // حفظ النسخة المزامنة في الذاكرة المحلية
         localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
       } catch (e) { 
-        console.error("Supabase Sync Fetch Error:", e);
+        console.error("Supabase Cloud Sync Error:", e);
       }
     }
 
@@ -92,22 +91,19 @@ export const dbAPI = {
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {
-    // حفظ محلي فوري
     localStorage.setItem(DB_KEY, JSON.stringify(config));
 
     if (supabase) {
       try {
-        console.log("Saving to cloud...");
-        // 1. حفظ الإعدادات العامة
-        const { error: configError } = await supabase.from('site_config').upsert({ 
+        console.log("Saving to Cloud...");
+        // حفظ الإعدادات
+        await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
           landing_data: config.landing 
         });
         
-        if (configError) throw configError;
-
-        // 2. تصفية وحفظ العملاء الحقيقيين (الذين ليسوا ديمو)
+        // حفظ العملاء الحقيقيين
         const realUsers = config.users
           .filter(u => !u.id.startsWith('demo-'))
           .map(u => ({
@@ -121,14 +117,11 @@ export const dbAPI = {
           }));
 
         if (realUsers.length > 0) {
-          const { error: usersError } = await supabase.from('users_pages').upsert(realUsers);
-          if (usersError) throw usersError;
+          const { error } = await supabase.from('users_pages').upsert(realUsers);
+          if (error) console.error("Cloud User Upsert Error:", error);
         }
-
-        console.log("Cloud sync successful!");
-        return true;
       } catch (e) { 
-        console.error("Supabase Global Sync Error:", e); 
+        console.error("Global Cloud Save Error:", e); 
         return false;
       }
     }
@@ -141,7 +134,7 @@ export const dbAPI = {
         const { error } = await supabase.from('users_pages').delete().eq('id', id);
         if (error) throw error;
       } catch (e) {
-        console.error("Supabase Delete Error:", e);
+        console.error("Supabase Cloud Delete Error:", e);
         return false;
       }
     }
