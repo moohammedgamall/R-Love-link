@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Examples from './components/Examples';
@@ -24,10 +24,10 @@ const App: React.FC = () => {
   const [isPromptingPassword, setIsPromptingPassword] = useState(false);
   const [prefilledPass, setPrefilledPass] = useState('');
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     const data = await dbAPI.getConfig();
     setConfig(data);
-  };
+  }, []);
 
   useEffect(() => {
     const initDB = async () => {
@@ -35,7 +35,7 @@ const App: React.FC = () => {
       setIsLoading(false);
     };
     initDB();
-  }, []);
+  }, [refreshData]);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -51,14 +51,9 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // معالجة قائمة الأعمال لعرضها في المعرض مع إظهار كلمة السر دائماً لكل الأعمال
   const allExamples = useMemo(() => {
     if (!config) return [];
-    
-    // 1. النماذج الثابتة
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
-    
-    // 2. أعمال العملاء الحقيقية المجلوبة من السحاب
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
@@ -66,33 +61,53 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-rose-600',
         icon: '❤️',
-        showPass: true // عرض كلمة السر دائماً فوق الكرت
+        showPass: true 
       }));
-
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
-  const handleLogin = async (pass: string) => {
+  const handleLogin = async (pass: string, isAuto: boolean = false) => {
+    const cleanPass = pass.trim();
+    if (!cleanPass) return;
+
     if (path === '/admin') {
-      const success = await dbAPI.authenticateAdmin(pass);
+      const success = await dbAPI.authenticateAdmin(cleanPass);
       if (success) setIsAdminLoggedIn(true);
       else alert('رمز الإدمن غير صحيح');
       return;
     }
 
-    const user = await dbAPI.authenticateUser(pass);
+    // محاولة البحث في البيانات المحملة حالياً أولاً لسرعة الاستجابة
+    const localUser = config?.users.find(u => u.password.trim() === cleanPass);
+    if (localUser) {
+      setCurrentUser(localUser);
+      setIsPromptingPassword(false);
+      setPrefilledPass('');
+      navigate('/view');
+      return;
+    }
+
+    // إذا لم ينجح محلياً، نحاول الاتصال بقاعدة البيانات (للتأكد من أحدث البيانات)
+    const user = await dbAPI.authenticateUser(cleanPass);
     if (user) {
       setCurrentUser(user);
       setIsPromptingPassword(false);
       setPrefilledPass('');
       navigate('/view');
-    } else alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
+    } else {
+      if (isAuto) {
+        // إذا فشل الدخول التلقائي، لا نظهر تنبيهاً بل نفتح صفحة الدخول مع ملء الرمز للمحاولة اليدوية
+        setPrefilledPass(cleanPass);
+        setIsPromptingPassword(true);
+      } else {
+        alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
+      }
+    }
   };
 
   const handleExampleClick = (pass?: string) => {
     if (pass) {
-      setPrefilledPass(pass);
-      handleLogin(pass); 
+      handleLogin(pass, true); // استخدام الدخول التلقائي
     } else {
       setPrefilledPass('');
       setIsPromptingPassword(true);
@@ -121,7 +136,7 @@ const App: React.FC = () => {
     if (path === '/admin') {
       return isAdminLoggedIn 
         ? <AdminDashboard config={config} setConfig={setConfig} onLogout={handleLogout} /> 
-        : <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => navigate('/')} /></div>;
+        : <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4"><LoginGate onLogin={(p) => handleLogin(p)} onBack={() => navigate('/')} /></div>;
     }
 
     if (path === '/view' && currentUser) {
@@ -129,7 +144,9 @@ const App: React.FC = () => {
     }
 
     if (isPromptingPassword) {
-      return <div className="min-h-screen bg-white/50 backdrop-blur-xl flex items-center justify-center p-4"><LoginGate onLogin={handleLogin} onBack={() => setIsPromptingPassword(false)} prefilled={prefilledPass} /></div>;
+      return <div className="min-h-screen bg-white/50 backdrop-blur-xl flex items-center justify-center p-4 z-[500] fixed inset-0">
+        <LoginGate onLogin={(p) => handleLogin(p)} onBack={() => setIsPromptingPassword(false)} prefilled={prefilledPass} />
+      </div>;
     }
 
     return (

@@ -63,7 +63,6 @@ export const dbAPI = {
             bottomMessage: u.bottom_message
           }));
           
-          // دمج الديمو مع البيانات السحابية الحقيقية لضمان عدم تكرارها
           const demoUsers = INITIAL_DATA.users;
           currentConfig.users = [...demoUsers, ...remoteUsers.filter(ru => !demoUsers.find(du => du.id === ru.id))];
         }
@@ -81,14 +80,12 @@ export const dbAPI = {
 
     if (supabase) {
       try {
-        // حفظ الإعدادات
         await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
           landing_data: config.landing 
         });
         
-        // حفظ العملاء الجدد أو المحدثين
         const realUsers = config.users
           .filter(u => !u.id.startsWith('demo-'))
           .map(u => ({
