@@ -11,7 +11,6 @@ import LoginGate from './components/LoginGate';
 import AdminDashboard from './components/AdminDashboard';
 import PersonalPage from './components/PersonalPage';
 import LinksPage from './components/LinksPage';
-import Chatbot from './components/Chatbot';
 import { dbAPI } from './services/dbService';
 import { AdminConfig, UserPageData, LandingExample } from './types';
 
@@ -45,6 +44,14 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    const handleLocationChange = () => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  useEffect(() => {
     const checkDirectLink = async () => {
       if (path.startsWith('/v/')) {
         const passFromUrl = path.split('/v/')[1];
@@ -69,14 +76,6 @@ const App: React.FC = () => {
     };
     initDB();
   }, [refreshData]);
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setPath(window.location.pathname);
-    };
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
 
   const allExamples = useMemo(() => {
     if (!config) return [];
@@ -169,7 +168,6 @@ const App: React.FC = () => {
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}
         </main>
-        <Chatbot />
         <BottomNav active={activeSection} setActive={setActiveSection} />
       </div>
     );
