@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { LandingExample } from '../types';
+import { Heart, Cake, Gift, Star, Sparkles, ChevronLeft } from 'lucide-react';
 
 interface Props {
   items: LandingExample[];
@@ -8,11 +9,25 @@ interface Props {
 }
 
 const Examples: React.FC<Props> = ({ items, onItemClick }) => {
+  // دالة لتحويل الرموز النصية إلى أيقونات Lucide
+  const renderIcon = (iconStr?: string) => {
+    const props = { size: 32, strokeWidth: 2.5 };
+    switch (iconStr) {
+      case '❤️': return <Heart {...props} fill="currentColor" />;
+      case '🎂': return <Cake {...props} />;
+      case '🎁': return <Gift {...props} />;
+      case '💝': return <Heart {...props} fill="currentColor" />;
+      case '✨': return <Sparkles {...props} />;
+      case '⭐': return <Star {...props} fill="currentColor" />;
+      default: return <Heart {...props} />;
+    }
+  };
+
   return (
-    <div className="space-y-12 py-6 animate-in fade-in slide-in-from-bottom-6 duration-1000" dir="rtl">
+    <div className="space-y-12 py-6 animate-in fade-in slide-in-from-bottom-6 duration-1000" dir="rtl" id="examples">
       <div className="flex flex-col items-center text-center gap-4 mb-12">
-        <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-4xl shadow-xl shadow-slate-100 border border-slate-50 mb-2 rotate-3 hover:rotate-0 transition-transform duration-500">
-          🎨
+        <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-rose-600 shadow-xl shadow-slate-100 border border-slate-50 mb-2 rotate-3 hover:rotate-0 transition-transform duration-500">
+          <Sparkles size={40} strokeWidth={2.5} />
         </div>
         <h2 className="text-4xl font-black text-slate-900 tracking-tight">معرض أعمالنا</h2>
         <p className="text-slate-400 text-base font-bold max-w-sm leading-relaxed px-4">
@@ -36,11 +51,7 @@ const Examples: React.FC<Props> = ({ items, onItemClick }) => {
             )}
 
             <div className={`w-16 h-16 ${sample.color} rounded-3xl flex items-center justify-center shadow-xl text-white group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shrink-0`}>
-              {sample.icon ? <span className="text-3xl">{sample.icon}</span> : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              )}
+              {renderIcon(sample.icon)}
             </div>
             
             <div className="text-right flex-1 pr-6">
@@ -64,9 +75,7 @@ const Examples: React.FC<Props> = ({ items, onItemClick }) => {
             </div>
 
             <div className="text-slate-200 group-hover:text-rose-400 transition-all duration-300 transform rotate-180 mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft size={28} strokeWidth={3} />
             </div>
           </div>
         ))}
@@ -85,17 +94,21 @@ const Examples: React.FC<Props> = ({ items, onItemClick }) => {
       <div className="pt-10 text-center space-y-10">
          <div className="inline-block px-6 py-3 bg-white border border-slate-100 rounded-full shadow-sm hover:shadow-md transition-shadow">
             <p className="text-rose-600 font-black flex items-center justify-center gap-3 text-base">
-              <span className="text-2xl animate-pulse">🪄</span> صمم ذكرى لا تُنسى اليوم
+              <Sparkles className="animate-pulse" size={20} /> صمم ذكرى لا تُنسى اليوم
             </p>
          </div>
          
          <div className="grid grid-cols-2 gap-6 px-2">
            <div className="bg-white border border-slate-100 p-10 rounded-[3rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-rose-100 transition-all group">
-              <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-6 transition-all">🪄</div>
+              <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:scale-110 group-hover:rotate-6 transition-all">
+                <Star size={30} strokeWidth={2.5} fill="currentColor" />
+              </div>
               <span className="font-black text-slate-700 text-xs uppercase tracking-widest">تصميم مخصص</span>
            </div>
            <div className="bg-white border border-slate-100 p-10 rounded-[3rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all group">
-              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 group-hover:-rotate-6 transition-all">✅</div>
+              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:-rotate-6 transition-all">
+                <Gift size={30} strokeWidth={2.5} />
+              </div>
               <span className="font-black text-slate-700 text-xs uppercase tracking-widest">خصوصية تامة</span>
            </div>
          </div>
