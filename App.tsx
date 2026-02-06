@@ -59,8 +59,8 @@ const App: React.FC = () => {
           if (user) {
             setCurrentUser(user);
           } else {
-            setIsPromptingPassword(true);
             setPrefilledPass(passFromUrl);
+            setIsPromptingPassword(true);
           }
         }
       }
@@ -78,7 +78,6 @@ const App: React.FC = () => {
 
   const allExamples = useMemo(() => {
     if (!config) return [];
-    // جعل showPass دائماً true لإظهار كلمة السر فوق كل عمل
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
@@ -87,12 +86,12 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-slate-800',
         icon: '❤️',
-        showPass: true // تم التغيير من false إلى true
+        showPass: true
       }));
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
-  const handleLogin = async (pass: string, isAuto: boolean = false) => {
+  const handleLogin = async (pass: string) => {
     const cleanPass = pass.trim();
     if (!cleanPass) return;
 
@@ -112,11 +111,7 @@ const App: React.FC = () => {
       return;
     }
 
-    if (!isAuto) {
-      alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
-    } else {
-      setIsPromptingPassword(true);
-    }
+    alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
   };
 
   const handleLogout = () => {
@@ -153,7 +148,14 @@ const App: React.FC = () => {
     if (isPromptingPassword) {
       return (
         <div className="fixed inset-0 z-[500] bg-slate-950/60 backdrop-blur-xl flex items-center justify-center p-4">
-          <LoginGate onLogin={(p) => handleLogin(p)} onBack={() => setIsPromptingPassword(false)} prefilled={prefilledPass} />
+          <LoginGate 
+            onLogin={(p) => handleLogin(p)} 
+            onBack={() => {
+              setIsPromptingPassword(false);
+              setPrefilledPass('');
+            }} 
+            prefilled={prefilledPass} 
+          />
         </div>
       );
     }
@@ -163,7 +165,15 @@ const App: React.FC = () => {
         <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 pt-28 pb-40">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
-          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={(pass) => pass ? handleLogin(pass, true) : setIsPromptingPassword(true)} />}
+          {activeSection === 'examples' && (
+            <Examples 
+              items={allExamples} 
+              onItemClick={(pass) => {
+                setPrefilledPass(pass || '');
+                setIsPromptingPassword(true);
+              }} 
+            />
+          )}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}
