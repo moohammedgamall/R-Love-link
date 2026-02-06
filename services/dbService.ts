@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'heartlink_final_storage_v4';
+const DB_KEY = 'heartlink_v5_global';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -40,32 +40,20 @@ const INITIAL_DATA: AdminConfig = {
 
 export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
-    let currentConfig = { ...INITIAL_DATA };
+    let config = { ...INITIAL_DATA };
     
-    // 1. جلب البيانات المحلية أولاً
-    const saved = localStorage.getItem(DB_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.users) {
-          currentConfig = parsed;
-        }
-      } catch (e) {
-        console.error("Local parse error");
-      }
-    }
-
+    // 1. محاولة الجلب من Supabase أولاً كونه المصدر الحقيقي للبيانات المشتركة
     if (supabase) {
       try {
-        const { data: configData } = await supabase.from('site_config').select('*').maybeSingle();
-        const { data: usersData } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
+        const { data: configData, error: cfgError } = await supabase.from('site_config').select('*').maybeSingle();
+        const { data: usersData, error: usrError } = await supabase.from('users_pages').select('*').order('created_at', { ascending: false });
 
         if (configData) {
-          currentConfig.adminPass = configData.admin_pass;
-          currentConfig.landing = configData.landing_data;
+          config.adminPass = configData.admin_pass;
+          config.landing = configData.landing_data;
         }
 
-        if (usersData) {
+        if (usersData && usersData.length > 0) {
           const remoteUsers: UserPageData[] = usersData.map((u: any) => ({
             id: u.id,
             targetName: u.target_name,
@@ -76,41 +64,35 @@ export const dbAPI = {
             bottomMessage: u.bottom_message
           }));
           
-          // الدمج الذكي: الحفاظ على الديمو + إضافة الجديد من السحاب + الحفاظ على ما هو موجود محلياً ولم يرفع بعد
-          const localUsers = currentConfig.users;
+          // دمج بيانات الديمو مع البيانات الحقيقية
+          config.users = [
+            ...INITIAL_DATA.users,
+            ...remoteUsers.filter(ru => !INITIAL_DATA.users.find(du => du.id === ru.id))
+          ];
           
-          // نأخذ كل المستخدمين من السحاب كمرجع أساسي
-          const mergedUsers = [...remoteUsers];
-          
-          // نضيف أي مستخدم محلي غير موجود في السحاب (لم يكتمل رفعه مثلاً)
-          localUsers.forEach(lu => {
-            if (!mergedUsers.find(mu => mu.id === lu.id)) {
-              mergedUsers.push(lu);
-            }
-          });
-
-          // التأكد من وجود الديمو دائماً
-          const demoUsers = INITIAL_DATA.users;
-          demoUsers.forEach(du => {
-            if (!mergedUsers.find(mu => mu.id === du.id)) {
-              mergedUsers.unshift(du);
-            }
-          });
-
-          currentConfig.users = mergedUsers;
+          // تحديث الذاكرة المحلية للمتصفح (لتسريع التحميل مستقبلاً)
+          localStorage.setItem(DB_KEY, JSON.stringify(config));
+          return config;
         }
-        
-        localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
-      } catch (e) { 
-        console.error("Supabase Sync Error:", e);
+      } catch (e) {
+        console.error("Supabase Error, falling back to local storage:", e);
       }
     }
 
-    return currentConfig;
+    // 2. إذا فشل السحاب أو كان غير متاح، نستخدم الذاكرة المحلية
+    const saved = localStorage.getItem(DB_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      } catch (e) {}
+    }
+
+    return config;
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {
-    // حفظ محلي فوري
+    // حفظ محلي أولاً
     localStorage.setItem(DB_KEY, JSON.stringify(config));
 
     if (!supabase) return true;
@@ -123,7 +105,7 @@ export const dbAPI = {
         landing_data: config.landing 
       });
       
-      // رفع المستخدمين الحقيقيين فقط
+      // استخراج العملاء الحقيقيين (ليس الديمو)
       const realUsers = config.users
         .filter(u => !u.id.startsWith('demo-'))
         .map(u => ({
@@ -142,7 +124,7 @@ export const dbAPI = {
       }
       return true;
     } catch (e) { 
-      console.error("Global Save Error:", e); 
+      console.error("Save Error:", e); 
       return false;
     }
   },
@@ -150,7 +132,8 @@ export const dbAPI = {
   async deleteUser(id: string): Promise<boolean> {
     if (supabase && !id.startsWith('demo-')) {
       try {
-        await supabase.from('users_pages').delete().eq('id', id);
+        const { error } = await supabase.from('users_pages').delete().eq('id', id);
+        if (error) throw error;
       } catch (e) {
         return false;
       }
@@ -161,8 +144,7 @@ export const dbAPI = {
   async authenticateUser(pass: string | null): Promise<UserPageData | null> {
     if (!pass) return null;
     const config = await this.getConfig();
-    const cleanPass = pass.trim();
-    return config.users.find(u => u.password.trim() === cleanPass) || null;
+    return config.users.find(u => u.password.trim() === pass.trim()) || null;
   },
 
   async authenticateAdmin(pass: string | null): Promise<boolean> {

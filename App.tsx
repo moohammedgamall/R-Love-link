@@ -11,6 +11,7 @@ import LoginGate from './components/LoginGate';
 import AdminDashboard from './components/AdminDashboard';
 import PersonalPage from './components/PersonalPage';
 import LinksPage from './components/LinksPage';
+import Chatbot from './components/Chatbot';
 import { dbAPI } from './services/dbService';
 import { AdminConfig, UserPageData, LandingExample } from './types';
 
@@ -29,14 +30,14 @@ const App: React.FC = () => {
     setConfig(data);
   }, []);
 
-  // دالة التنقل المخصصة
   const navigate = (newPath: string) => {
     window.history.pushState({}, '', newPath);
     setPath(newPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // عند الانتقال لصفحة الأعمال، نحدث البيانات
+    if (newPath === '/') refreshData();
   };
 
-  // التحقق من الرابط الديناميكي /v/password
   useEffect(() => {
     const checkDirectLink = async () => {
       if (path.startsWith('/v/')) {
@@ -46,7 +47,6 @@ const App: React.FC = () => {
           if (user) {
             setCurrentUser(user);
           } else {
-            // إذا كان الكود خطأ، نرجعه للرئيسية أو نطلب منه الباسورد
             setIsPromptingPassword(true);
             setPrefilledPass(passFromUrl);
           }
@@ -114,15 +114,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleExampleClick = (pass?: string) => {
-    if (pass) {
-      handleLogin(pass, true);
-    } else {
-      setPrefilledPass('');
-      setIsPromptingPassword(true);
-    }
-  };
-
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setCurrentUser(null);
@@ -150,7 +141,6 @@ const App: React.FC = () => {
           </div>;
     }
 
-    // إذا كان المسار يبدأ بـ /v/ وهناك مستخدم مسجل
     if (path.startsWith('/v/') && currentUser) {
       return <PersonalPage data={currentUser} onLogout={handleLogout} />;
     }
@@ -164,15 +154,16 @@ const App: React.FC = () => {
     }
 
     return (
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center w-full">
         <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 pt-28 pb-40">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
-          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={handleExampleClick} />}
+          {activeSection === 'examples' && <Examples items={allExamples} onItemClick={(pass) => pass ? handleLogin(pass, true) : setIsPromptingPassword(true)} />}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}
           {activeSection === 'steps' && <Steps steps={config.landing.steps} />}
           {activeSection === 'order' && <Order />}
         </main>
+        <Chatbot />
         <BottomNav active={activeSection} setActive={setActiveSection} />
       </div>
     );
