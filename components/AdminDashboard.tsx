@@ -85,37 +85,41 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     const ok = await saveToDB(newConfig);
     if (ok) {
       setEditingUser({ id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: '' });
-      alert('تم إضافة العميل بنجاح! ✅');
+      alert('تم إضافة العميل بنجاح ومزامنته! ✅');
     }
   };
 
   const deleteUser = async (id: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذه الصفحة نهائياً؟')) {
-      const newConfig = { ...config, users: config.users.filter(u => u.id !== id) };
-      await saveToDB(newConfig);
+    if (window.confirm('هل أنت متأكد من حذف هذه الصفحة نهائياً؟ ستختفي من السحاب فوراً.')) {
+      setIsSaving(true);
+      const cloudOk = await dbAPI.deleteUser(id);
+      if (cloudOk) {
+        const newConfig = { ...config, users: config.users.filter(u => u.id !== id) };
+        setConfig(newConfig);
+        alert('تم الحذف بنجاح من قاعدة البيانات.');
+      }
+      setIsSaving(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-['Cairo'] pb-32 overflow-x-hidden" dir="rtl">
-      {/* Saving Overlay */}
       {isSaving && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-center justify-center">
           <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl border border-slate-800 flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="font-black text-rose-500 animate-pulse text-lg">جاري الحفظ والمزامنة السحابية...</span>
+            <span className="font-black text-rose-500 animate-pulse text-lg">جاري تحديث السحاب...</span>
           </div>
         </div>
       )}
 
-      {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-slate-950/80 backdrop-blur-2xl border-b border-white/5 px-6 py-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-rose-600/20 rotate-3">👑</div>
             <div>
               <h1 className="text-xl font-black tracking-tight">لوحة الإدارة</h1>
-              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Database Linked</p>
+              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Cloud Sync Active</p>
             </div>
           </div>
           <button 
@@ -128,7 +132,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 pt-32">
-        {/* Navigation Tabs */}
         <div className="flex p-1.5 bg-slate-900/50 rounded-2xl border border-white/5 mb-10 w-full max-w-2xl mx-auto">
           <button 
             onClick={() => setActiveTab('users')}
@@ -155,7 +158,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 space-y-6">
                 <div className="bg-slate-900/40 p-6 rounded-[2rem] border border-white/5">
-                  <h3 className="text-lg font-black mb-6 text-slate-400">قائمة الصفحات ({config.users.length})</h3>
+                  <h3 className="text-lg font-black mb-6 text-slate-400">قائمة الصفحات السحابية ({config.users.length})</h3>
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                     {config.users.map(u => (
                       <div key={u.id} className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-rose-600/50 transition-all">

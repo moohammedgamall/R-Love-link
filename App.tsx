@@ -51,14 +51,14 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // معالجة قائمة الأعمال لعرضها في المعرض مع إظهار كلمة السر دائماً
+  // معالجة قائمة الأعمال لعرضها في المعرض مع إظهار كلمة السر دائماً لكل الأعمال
   const allExamples = useMemo(() => {
     if (!config) return [];
     
     // 1. النماذج الثابتة
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // 2. أعمال العملاء الحقيقية (الآن تظهر كلمة السر فوق الكرت كما طلب المستخدم)
+    // 2. أعمال العملاء الحقيقية المجلوبة من السحاب
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
@@ -66,7 +66,7 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-rose-600',
         icon: '❤️',
-        showPass: true // تم التغيير لـ true لعرض كلمة السر فوق الكرت
+        showPass: true // عرض كلمة السر دائماً فوق الكرت
       }));
 
     return [...staticExamples, ...clientExamples];
