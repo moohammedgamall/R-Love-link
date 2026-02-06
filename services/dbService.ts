@@ -106,18 +106,17 @@ export const dbAPI = {
 
     if (supabase) {
       try {
-        // 1. تحديث الإعدادات العامة
         await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
           landing_data: config.landing 
         });
         
-        // 2. تحديث كافة العملاء دفعة واحدة (أكثر كفاءة)
         const realUsers = config.users.filter(u => !u.id.startsWith('demo-')).map(u => ({
           id: u.id,
           target_name: u.targetName,
           password: u.password,
+          // Fixed: Use camelCase properties from UserPageData interface
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
@@ -127,8 +126,6 @@ export const dbAPI = {
         if (realUsers.length > 0) {
           await supabase.from('users_pages').upsert(realUsers);
         }
-        
-        // 3. حذف المستخدمين الذين تم حذفهم من القائمة المحلية (اختياري، يفضل الإبقاء عليهم في السحاب كأرشيف)
       } catch (e) { console.error("Supabase Save Error:", e); }
     }
     return true;
@@ -136,11 +133,13 @@ export const dbAPI = {
 
   async authenticateUser(pass: string): Promise<UserPageData | null> {
     const config = await this.getConfig();
-    return config.users.find(u => u.password === pass) || null;
+    const cleanPass = pass.trim(); // تنظيف المسافات من الإدخال
+    // البحث عن مستخدم بكلمة سر مطابقة (مع تجاهل المسافات في المخزن أيضاً)
+    return config.users.find(u => u.password.trim() === cleanPass) || null;
   },
 
   async authenticateAdmin(pass: string): Promise<boolean> {
     const config = await this.getConfig();
-    return config.adminPass === pass;
+    return config.adminPass.trim() === pass.trim();
   }
 };

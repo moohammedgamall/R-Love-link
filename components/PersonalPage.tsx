@@ -12,7 +12,10 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const start = new Date(data.startDate).getTime();
+      // التأكد من وجود تاريخ صالح، وإلا نستخدم تاريخ اليوم كافتراضي
+      const startDateRaw = data.startDate || new Date().toISOString();
+      const startDate = new Date(startDateRaw);
+      const start = isNaN(startDate.getTime()) ? new Date().getTime() : startDate.getTime();
       const now = new Date().getTime();
       const diff = Math.abs(now - start);
       
@@ -28,7 +31,8 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
     return () => clearInterval(timer);
   }, [data.startDate]);
 
-  if (!timeLeft) return null;
+  // حتى لو لم يحسب العداد بعد، نعرض الصفحة ولا نرجع null
+  const displayTime = timeLeft || { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
 
   const labels: Record<string, string> = {
     years: 'سنة', months: 'شهر', days: 'يوم',
@@ -36,7 +40,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] pb-40">
+    <div className="min-h-screen bg-[#fcfcfd] pb-40 font-['Cairo']" dir="rtl">
       <nav className="p-6 flex justify-between items-center max-w-2xl mx-auto sticky top-0 bg-white/80 backdrop-blur-2xl z-[100] border-b border-slate-50">
         <div className="flex items-center gap-3">
            <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 animate-pulse">❤️</div>
@@ -56,7 +60,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {Object.entries(timeLeft).map(([unit, val]: any) => (
+          {Object.entries(displayTime).map(([unit, val]: any) => (
             <div key={unit} className="ios-card p-6 flex flex-col items-center justify-center text-center group">
               <span className="text-4xl font-black text-slate-800 mb-1 group-hover:scale-110 group-hover:text-rose-600 transition-all">{val}</span>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels[unit]}</span>
@@ -68,7 +72,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           <div className="ios-card p-8 bg-slate-900 text-white overflow-hidden relative group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="flex flex-col items-center gap-6 relative z-10">
-              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center text-4xl shadow-2xl animate-spin-slow">🎵</div>
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center text-4xl shadow-2xl animate-bounce">🎵</div>
               <div className="w-full">
                 <p className="text-center text-[10px] font-bold text-rose-400 mb-4 uppercase tracking-[0.3em]">Playing Your Memory</p>
                 <audio controls className="w-full h-10 rounded-full opacity-90 brightness-200">
