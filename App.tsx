@@ -24,10 +24,14 @@ const App: React.FC = () => {
   const [isPromptingPassword, setIsPromptingPassword] = useState(false);
   const [prefilledPass, setPrefilledPass] = useState('');
 
+  const refreshData = async () => {
+    const data = await dbAPI.getConfig();
+    setConfig(data);
+  };
+
   useEffect(() => {
     const initDB = async () => {
-      const data = await dbAPI.getConfig();
-      setConfig(data);
+      await refreshData();
       setIsLoading(false);
     };
     initDB();
@@ -50,14 +54,13 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // تجميع كافة الأعمال (الأصلية والمضافة يدوياً)
   const allExamples = useMemo(() => {
     if (!config) return [];
     
-    // 1. النماذج الافتراضية
+    // 1. النماذج الافتراضية الثابتة
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // 2. الأعمال الحقيقية التي قمت بإضافتها
+    // 2. الأعمال التي أضفتها أنت يدوياً
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
@@ -91,7 +94,7 @@ const App: React.FC = () => {
   const handleExampleClick = (pass?: string) => {
     if (pass) {
       setPrefilledPass(pass);
-      handleLogin(pass); // دخول مباشر للنماذج لتسهيل العرض
+      handleLogin(pass); 
     } else {
       setIsPromptingPassword(true);
     }
@@ -106,8 +109,8 @@ const App: React.FC = () => {
 
   if (isLoading || !config) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-        <div className="text-7xl sm:text-8xl animate-heartbeat select-none">❤️</div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-7xl animate-heartbeat select-none">❤️</div>
         <style>{`
           @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
           .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
@@ -125,7 +128,7 @@ const App: React.FC = () => {
     return (
       <div className="flex flex-col items-center">
         <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
-        <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-32 animate-in fade-in duration-700">
+        <main className="w-full max-w-2xl mx-auto px-4 pt-28 pb-32">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
           {activeSection === 'examples' && <Examples items={allExamples} onItemClick={handleExampleClick} />}
           {activeSection === 'features' && <Features onCtaClick={() => setActiveSection('order')} />}

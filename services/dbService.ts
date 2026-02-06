@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'r_love_platform_db_v2';
+const DB_KEY = 'heartlink_final_storage_v1';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -30,24 +30,6 @@ const INITIAL_DATA: AdminConfig = {
       songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
       images: ['https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?auto=format&fit=crop&w=800&q=80'],
       bottomMessage: 'فاجئهم بصفحة خاصة مليانة ذكريات.'
-    },
-    {
-      id: 'demo-grad',
-      targetName: 'احتفال التخرج',
-      password: 'grad',
-      startDate: '2024-06-15T09:00:00Z',
-      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-      images: ['https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80'],
-      bottomMessage: 'فخورين بيك وبكل اللي وصلتله! 🎓'
-    },
-    {
-      id: 'demo-anniversary',
-      targetName: 'ذكرى زواجنا',
-      password: 'ever',
-      startDate: '2020-10-10T18:00:00Z',
-      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-      images: ['https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80'],
-      bottomMessage: 'أجمل سنين عمري كانت معاك. ❤️'
     }
   ],
   landing: {
@@ -62,31 +44,46 @@ const INITIAL_DATA: AdminConfig = {
     examples: [
       { title: 'نموذج عيد الحب الاحترافي', pass: 'love', color: 'bg-red-600', icon: '❤️', showPass: true },
       { title: 'نموذج عيد ميلاد مميز', pass: 'cake', color: 'bg-amber-500', icon: '🎂', showPass: true },
-      { title: 'نموذج حفل تخرج', pass: 'grad', color: 'bg-blue-600', icon: '🎓', showPass: true },
-      { title: 'نموذج ذكرى زواج فخم', pass: 'ever', color: 'bg-indigo-600', icon: '💍', showPass: true },
     ]
   }
 };
 
 export const dbAPI = {
+  mergeUsers(localUsers: UserPageData[], remoteUsers: UserPageData[]): UserPageData[] {
+    const userMap = new Map<string, UserPageData>();
+    INITIAL_DATA.users.forEach(u => userMap.set(u.id, u));
+    localUsers.forEach(u => userMap.set(u.id, u));
+    remoteUsers.forEach(u => userMap.set(u.id, u));
+    return Array.from(userMap.values());
+  },
+
   async getConfig(): Promise<AdminConfig> {
-    // البدء بالبيانات الافتراضية
     let currentConfig = { ...INITIAL_DATA };
-    
-    // محاولة الجلب من LocalStorage أولاً (كاش محلي سريع)
     const local = localStorage.getItem(DB_KEY);
+    let localUsers: UserPageData[] = [];
+    
     if (local) {
-      currentConfig = JSON.parse(local);
+      try {
+        const parsed = JSON.parse(local);
+        currentConfig.landing = parsed.landing || currentConfig.landing;
+        currentConfig.adminPass = parsed.adminPass || currentConfig.adminPass;
+        localUsers = parsed.users || [];
+      } catch (e) { console.error(e); }
     }
 
-    // محاولة التحديث من Supabase إذا كان متاحاً
+    let remoteUsers: UserPageData[] = [];
     if (supabase) {
       try {
-        const { data: configData, error: configError } = await supabase.from('site_config').select('*').single();
-        const { data: usersData, error: usersError } = await supabase.from('users_pages').select('*');
+        const { data: configData } = await supabase.from('site_config').select('*').maybeSingle();
+        const { data: usersData } = await supabase.from('users_pages').select('*');
 
-        if (configData && !configError) {
-          const mappedUsers = (usersData || []).map((u: any) => ({
+        if (configData) {
+          currentConfig.adminPass = configData.admin_pass;
+          currentConfig.landing = configData.landing_data;
+        }
+
+        if (usersData) {
+          remoteUsers = usersData.map((u: any) => ({
             id: u.id,
             targetName: u.target_name,
             password: u.password,
@@ -95,50 +92,44 @@ export const dbAPI = {
             images: u.images || [],
             bottomMessage: u.bottom_message
           }));
-
-          // دمج الديمو مع المستخدمين المجلوبين
-          currentConfig = {
-            adminPass: configData.admin_pass,
-            landing: configData.landing_data,
-            users: [...INITIAL_DATA.users, ...mappedUsers]
-          };
-          
-          // تحديث الكاش المحلي لضمان الثبات
-          localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
         }
-      } catch (e) {
-        console.error("Supabase Fetch Error:", e);
-      }
+      } catch (e) { console.error("Supabase Fetch Error:", e); }
     }
-    
+
+    currentConfig.users = this.mergeUsers(localUsers, remoteUsers);
+    localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
     return currentConfig;
   },
 
   async saveConfig(config: AdminConfig): Promise<boolean> {
-    // 1. الحفظ في LocalStorage فوراً (أهم خطوة للثبات بعد التحديث)
     localStorage.setItem(DB_KEY, JSON.stringify(config));
 
-    // 2. محاولة الحفظ في Supabase
     if (supabase) {
       try {
-        await supabase.from('site_config').upsert({ id: 1, admin_pass: config.adminPass, landing_data: config.landing });
+        // 1. تحديث الإعدادات العامة
+        await supabase.from('site_config').upsert({ 
+          id: 1, 
+          admin_pass: config.adminPass, 
+          landing_data: config.landing 
+        });
         
-        // حفظ المستخدمين غير الديمو فقط
-        const realUsers = config.users.filter(u => !u.id.startsWith('demo-'));
-        for (const user of realUsers) {
-          await supabase.from('users_pages').upsert({
-            id: user.id, 
-            target_name: user.targetName, 
-            password: user.password,
-            start_date: user.startDate, 
-            song_url: user.songUrl, 
-            images: user.images,
-            bottom_message: user.bottomMessage
-          });
+        // 2. تحديث كافة العملاء دفعة واحدة (أكثر كفاءة)
+        const realUsers = config.users.filter(u => !u.id.startsWith('demo-')).map(u => ({
+          id: u.id,
+          target_name: u.targetName,
+          password: u.password,
+          start_date: u.startDate,
+          song_url: u.songUrl,
+          images: u.images,
+          bottom_message: u.bottomMessage
+        }));
+
+        if (realUsers.length > 0) {
+          await supabase.from('users_pages').upsert(realUsers);
         }
-      } catch (e) { 
-        console.error('Supabase Save Error:', e); 
-      }
+        
+        // 3. حذف المستخدمين الذين تم حذفهم من القائمة المحلية (اختياري، يفضل الإبقاء عليهم في السحاب كأرشيف)
+      } catch (e) { console.error("Supabase Save Error:", e); }
     }
     return true;
   },
