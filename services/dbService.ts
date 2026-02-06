@@ -8,7 +8,7 @@ const SUPABASE_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 const isSupabaseEnabled = SUPABASE_URL !== '' && SUPABASE_KEY !== '' && !SUPABASE_URL.includes('your-project');
 const supabase = isSupabaseEnabled ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const DB_KEY = 'heartlink_v6_global';
+const DB_KEY = 'heartlink_v7_global';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
@@ -43,18 +43,17 @@ export const dbAPI = {
         }
 
         if (usersRes.data) {
-          const remoteUsers: UserPageData[] = usersRes.data.map((u: any) => ({
-              id: u.id,
-              targetName: u.target_name,
-              password: u.password,
-              startDate: u.start_date,
-              songUrl: u.song_url || '',
-              images: Array.isArray(u.images) ? u.images : [],
-              videos: Array.isArray(u.videos) ? u.videos : [],
-              bottomMessage: u.bottom_message || ''
-            }));
+          config.users = usersRes.data.map((u: any) => ({
+            id: u.id,
+            targetName: u.target_name,
+            password: u.password,
+            startDate: u.start_date,
+            songUrl: u.song_url || '',
+            images: Array.isArray(u.images) ? u.images : [],
+            videos: Array.isArray(u.videos) ? u.videos : [],
+            bottomMessage: u.bottom_message || ''
+          }));
           
-          config.users = remoteUsers;
           localStorage.setItem(DB_KEY, JSON.stringify(config));
           return config;
         }
@@ -66,7 +65,12 @@ export const dbAPI = {
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...INITIAL_DATA,
+          ...parsed,
+          users: Array.isArray(parsed.users) ? parsed.users : []
+        };
       } catch (e) {}
     }
 
@@ -79,29 +83,30 @@ export const dbAPI = {
 
     try {
       // 1. تحديث الإعدادات العامة
-      await supabase.from('site_config').upsert({ 
+      const { error: configErr } = await supabase.from('site_config').upsert({ 
         id: 1, 
         admin_pass: config.adminPass, 
-        landing_data: config.landing 
+        landing_data: config.landing,
+        updated_at: new Date().toISOString()
       });
+      if (configErr) throw configErr;
       
       // 2. تحديث صفحات العملاء
-      const realUsers = config.users
-        .filter(u => !u.id.startsWith('demo-'))
-        .map(u => ({
+      if (config.users.length > 0) {
+        const realUsers = config.users.map(u => ({
           id: u.id,
           target_name: u.targetName,
           password: u.password,
           start_date: u.startDate,
-          song_url: u.songUrl,
-          images: u.images,
-          videos: u.videos || [],
-          bottom_message: u.bottomMessage
+          // Fix: Use songUrl from UserPageData interface instead of song_url
+          song_url: u.songUrl || '',
+          images: Array.isArray(u.images) ? u.images : [],
+          videos: Array.isArray(u.videos) ? u.videos : [],
+          bottom_message: u.bottomMessage || ''
         }));
 
-      if (realUsers.length > 0) {
-        const { error } = await supabase.from('users_pages').upsert(realUsers);
-        if (error) throw error;
+        const { error: usersErr } = await supabase.from('users_pages').upsert(realUsers);
+        if (usersErr) throw usersErr;
       }
       return true;
     } catch (e) { 
@@ -111,7 +116,7 @@ export const dbAPI = {
   },
 
   async deleteUser(id: string): Promise<boolean> {
-    if (supabase && !id.startsWith('demo-')) {
+    if (supabase) {
       try {
         const { error } = await supabase.from('users_pages').delete().eq('id', id);
         if (error) throw error;

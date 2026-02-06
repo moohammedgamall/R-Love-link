@@ -213,4 +213,13 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           </p>
           <div className="flex justify-center items-center gap-2">
             <Heart fill="currentColor" size={12} className="text-rose-200" />
-            <p className="text-[10px
+            <p className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">Love Forever</p>
+            <Heart fill="currentColor" size={12} className="text-rose-200" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PersonalPage;
