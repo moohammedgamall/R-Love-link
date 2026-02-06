@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Home, PlayCircle, Sparkles, ListChecks, Zap } from 'lucide-react';
 
 interface Props {
   active: 'home' | 'examples' | 'features' | 'steps' | 'order';
@@ -8,31 +9,11 @@ interface Props {
 
 const BottomNav: React.FC<Props> = ({ active, setActive }) => {
   const tabs = [
-    { id: 'home', label: 'الرئيسية', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-      </svg>
-    )},
-    { id: 'examples', label: 'أعمالنا', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
-      </svg>
-    )},
-    { id: 'features', label: 'المميزات', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-      </svg>
-    )},
-    { id: 'steps', label: 'الخطوات', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
-      </svg>
-    )},
-    { id: 'order', label: 'اطلب', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-      </svg>
-    )},
+    { id: 'home', label: 'الرئيسية', icon: <Home size={22} strokeWidth={2.5} /> },
+    { id: 'examples', label: 'أعمالنا', icon: <PlayCircle size={22} strokeWidth={2.5} /> },
+    { id: 'features', label: 'المميزات', icon: <Sparkles size={22} strokeWidth={2.5} /> },
+    { id: 'steps', label: 'الخطوات', icon: <ListChecks size={22} strokeWidth={2.5} /> },
+    { id: 'order', label: 'اطلب', icon: <Zap size={22} strokeWidth={2.5} /> },
   ];
 
   return (
@@ -49,7 +30,6 @@ const BottomNav: React.FC<Props> = ({ active, setActive }) => {
                   isActive ? 'text-white' : 'text-slate-400 hover:text-red-500'
                 }`}
               >
-                {/* Pill Indicator - Red background for active state */}
                 {isActive && (
                   <div className="absolute inset-y-1 inset-x-1 bg-red-600 rounded-[1.6rem] z-[-1] shadow-lg shadow-red-600/20 animate-in fade-in zoom-in-95 duration-200"></div>
                 )}

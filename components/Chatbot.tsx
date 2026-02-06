@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiChatResponse } from '../services/geminiService';
 import { ChatMessage } from '../types';
+import { SendHorizontal, X, MessageSquareHeart } from 'lucide-react';
 
 const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,8 +54,8 @@ const Chatbot: React.FC = () => {
           <div className="p-6 bg-white border-b border-slate-50 flex justify-between items-center" dir="rtl">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-rose-100">
-                  ❤️
+                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
+                  <MessageSquareHeart size={24} />
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
               </div>
@@ -65,11 +66,9 @@ const Chatbot: React.FC = () => {
             </div>
             <button 
               onClick={() => setIsOpen(false)} 
-              className="bg-slate-50 text-slate-400 p-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-90"
+              className="bg-slate-50 text-slate-400 p-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-90 flex items-center justify-center"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+              <X size={18} strokeWidth={3} />
             </button>
           </div>
 
@@ -112,9 +111,7 @@ const Chatbot: React.FC = () => {
               disabled={isLoading || !input.trim()}
               className="bg-rose-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-rose-700 disabled:opacity-50 transition-all shadow-lg shadow-rose-100 active:scale-90 shrink-0"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 -rotate-90" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-              </svg>
+              <SendHorizontal size={20} className="rotate-180" />
             </button>
           </form>
         </div>
@@ -130,18 +127,8 @@ const Chatbot: React.FC = () => {
         {!isOpen && (
           <div className="absolute inset-0 bg-gradient-to-tr from-rose-600 to-rose-400 animate-pulse group-hover:animate-none"></div>
         )}
-        <span className="relative z-10">
-          {isOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          ) : (
-             <div className="flex flex-col items-center">
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-              </svg>
-             </div>
-          )}
+        <span className="relative z-10 flex items-center justify-center">
+          {isOpen ? <X size={24} strokeWidth={2.5} /> : <MessageSquareHeart size={24} strokeWidth={2.5} />}
         </span>
       </button>
     </div>
