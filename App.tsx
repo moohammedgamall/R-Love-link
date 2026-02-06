@@ -168,8 +168,9 @@ const App: React.FC = () => {
           {activeSection === 'examples' && (
             <Examples 
               items={allExamples} 
-              onItemClick={(pass) => {
-                setPrefilledPass(pass || '');
+              onItemClick={() => {
+                // تم إزالة pass من هنا لضمان عدم الكتابة التلقائية
+                setPrefilledPass('');
                 setIsPromptingPassword(true);
               }} 
             />
