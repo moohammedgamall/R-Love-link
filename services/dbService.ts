@@ -42,7 +42,6 @@ export const dbAPI = {
   async getConfig(): Promise<AdminConfig> {
     let currentConfig = { ...INITIAL_DATA };
     
-    // محاولة الجلب من المتصفح للعرض اللحظي
     const saved = localStorage.getItem(DB_KEY);
     if (saved) {
       try {
@@ -52,7 +51,6 @@ export const dbAPI = {
       }
     }
 
-    // الجلب الإجباري من السحاب لضمان الحداثة
     if (supabase) {
       try {
         console.log("Syncing with Supabase Cloud...");
@@ -70,17 +68,15 @@ export const dbAPI = {
             targetName: u.target_name,
             password: u.password,
             startDate: u.start_date,
-            song_url: u.song_url,
+            songUrl: u.song_url, // تم تصحيح المسمى هنا
             images: u.images || [],
             bottomMessage: u.bottom_message
           }));
           
-          // دمج بيانات السحاب مع الديمو فقط
           const demoUsers = INITIAL_DATA.users;
           currentConfig.users = [...demoUsers, ...remoteUsers.filter(ru => !demoUsers.find(du => du.id === ru.id))];
         }
         
-        // حفظ النسخة المزامنة في الذاكرة المحلية
         localStorage.setItem(DB_KEY, JSON.stringify(currentConfig));
       } catch (e) { 
         console.error("Supabase Cloud Sync Error:", e);
@@ -96,14 +92,12 @@ export const dbAPI = {
     if (supabase) {
       try {
         console.log("Saving to Cloud...");
-        // حفظ الإعدادات
         await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
           landing_data: config.landing 
         });
         
-        // حفظ العملاء الحقيقيين
         const realUsers = config.users
           .filter(u => !u.id.startsWith('demo-'))
           .map(u => ({
