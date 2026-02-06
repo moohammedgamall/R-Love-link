@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserPageData } from '../types';
-import { LogOut, Music, Share2, Check, Calendar, Heart } from 'lucide-react';
+import { LogOut, Music, Share2, Check, Heart, Play } from 'lucide-react';
 
 interface Props {
   data: UserPageData;
@@ -11,6 +11,13 @@ interface Props {
 const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+
+  // وظيفة للتحقق مما إذا كان الرابط هو فيديو يوتيوب
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -98,8 +105,14 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
               </div>
               <div className="w-full">
                 <p className="text-center text-[10px] font-bold text-rose-400 mb-4 uppercase tracking-[0.3em]">Playing Your Memory</p>
-                <audio controls className="w-full h-10 rounded-full opacity-90 brightness-200">
-                  <source src={data.songUrl} />
+                {/* استخدام src مباشرة مع key لضمان التحديث */}
+                <audio 
+                  key={data.songUrl}
+                  controls 
+                  className="w-full h-10 rounded-full opacity-90 brightness-200"
+                  src={data.songUrl}
+                >
+                  متصفحك لا يدعم تشغيل الصوت.
                 </audio>
               </div>
             </div>
@@ -108,33 +121,58 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
 
         {/* Video Gallery */}
         {data.videos && data.videos.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center gap-3 px-2">
               <div className="w-1.5 h-6 bg-rose-600 rounded-full"></div>
-              <h3 className="font-black text-slate-800">فيديوهاتنا</h3>
+              <h3 className="font-black text-slate-800 text-lg">فيديوهاتنا</h3>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              {data.videos.map((vid, idx) => (
-                <div key={idx} className="ios-card overflow-hidden bg-black aspect-video shadow-2xl">
-                  <video controls className="w-full h-full">
-                    <source src={vid} />
-                    متصفحك لا يدعم تشغيل الفيديو.
-                  </video>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 gap-6">
+              {data.videos.map((vid, idx) => {
+                const youtubeId = getYouTubeId(vid);
+                return (
+                  <div key={idx} className="ios-card overflow-hidden bg-black aspect-video shadow-2xl border-4 border-white relative group">
+                    {youtubeId ? (
+                      <iframe
+                        className="w-full h-full"
+                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    ) : (
+                      <video 
+                        key={vid}
+                        controls 
+                        className="w-full h-full object-contain"
+                        src={vid}
+                      >
+                        متصفحك لا يدعم تشغيل الفيديو.
+                      </video>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        <div className="space-y-4">
+        {/* Image Gallery */}
+        <div className="space-y-6">
           <div className="flex items-center gap-3 px-2">
             <div className="w-1.5 h-6 bg-rose-600 rounded-full"></div>
-            <h3 className="font-black text-slate-800">ألبوم الصور</h3>
+            <h3 className="font-black text-slate-800 text-lg">ألبوم الصور</h3>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {data.images.map((img, idx) => (
-              <div key={idx} className="ios-card overflow-hidden aspect-square border-4 border-white group relative">
-                <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" />
+              <div key={idx} className="ios-card overflow-hidden aspect-square border-4 border-white group relative shadow-md">
+                <img 
+                  src={img} 
+                  alt="" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" 
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
             ))}
           </div>

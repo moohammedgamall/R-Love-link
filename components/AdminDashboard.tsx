@@ -22,6 +22,12 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
   const [landingContent, setLandingContent] = useState<LandingContent>(config.landing);
   const [newAdminPass, setNewAdminPass] = useState(config.adminPass);
 
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   const copyToClipboard = (pass: string) => {
     const url = `${window.location.origin}/v/${pass}`;
     navigator.clipboard.writeText(url);
@@ -50,13 +56,12 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     });
   };
 
-  // Fixed handleFileUpload to explicitly type the files as File[] to prevent 'unknown' property access errors
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
     if (e.target.files && e.target.files[0]) {
       const files = Array.from(e.target.files) as File[];
       for (const file of files) {
-        if (type === 'video' && file.size > 15 * 1024 * 1024) {
-          alert('الفيديو كبير جداً. يفضل استخدام رابط لضمان السرعة.');
+        if (type === 'video' && file.size > 20 * 1024 * 1024) {
+          alert('الفيديو كبير جداً. يفضل استخدام رابط لضمان سرعة التحميل.');
           continue;
         }
         const base64 = await fileToBase64(file);
@@ -139,6 +144,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
 
         {activeTab === 'users' && (
           <div className="grid lg:grid-cols-3 gap-8">
+            {/* القائمة الجانبية للعملاء */}
             <div className="lg:col-span-1 bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 max-h-[80vh] overflow-y-auto">
                <h3 className="text-sm font-black text-slate-500 mb-4 uppercase tracking-widest">العملاء ({config.users.length})</h3>
                <div className="space-y-3">
@@ -172,6 +178,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                </div>
             </div>
 
+            {/* فورم الإنشاء */}
             <div className="lg:col-span-2 bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8">
               <h2 className="text-2xl font-black flex items-center gap-3">إنشاء تجربة جديدة <span className="text-rose-600 animate-pulse">✨</span></h2>
               
@@ -187,15 +194,14 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase px-2">تاريخ البداية</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase px-2">تاريخ البداية (لحساب فرق الوقت)</label>
                 <input type="date" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none text-slate-400" value={editingUser.startDate?.split('T')[0]} onChange={e => setEditingUser({...editingUser, startDate: e.target.value})} />
               </div>
 
               {/* Media Section */}
               <div className="space-y-6 bg-slate-950/40 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-lg font-black border-r-4 border-rose-600 pr-4">إضافة الوسائط (صور / فيديو / صوت)</h3>
+                <h3 className="text-lg font-black border-r-4 border-rose-600 pr-4">إضافة الوسائط (روابط أو ملفات)</h3>
                 
-                {/* Tabs for Media Type */}
                 <div className="flex bg-slate-900 p-1 rounded-xl">
                   {['image', 'video', 'audio'].map(t => (
                     <button 
@@ -211,12 +217,12 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   ))}
                 </div>
 
-                {/* Link Input */}
+                {/* رابط مياشر */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                     <input 
-                      placeholder={`أضف رابط ${mediaUrlInput.type === 'image' ? 'صورة' : mediaUrlInput.type === 'video' ? 'فيديو' : 'ملف صوتي'}...`}
+                      placeholder={`ضع رابط ${mediaUrlInput.type === 'image' ? 'صورة' : mediaUrlInput.type === 'video' ? 'فيديو (يوتيوب متاح)' : 'صوت'} هنا...`}
                       className="w-full pr-12 pl-4 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none focus:border-rose-600"
                       value={mediaUrlInput.url}
                       onChange={e => setMediaUrlInput({...mediaUrlInput, url: e.target.value})}
@@ -227,7 +233,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   </button>
                 </div>
 
-                <div className="text-center py-2 text-slate-500 text-xs font-bold">أو قم بالرفع من جهازك:</div>
+                <div className="text-center py-2 text-slate-500 text-xs font-bold">أو رفع ملفات مباشرة:</div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <label className="cursor-pointer bg-slate-900 border border-white/5 p-4 rounded-2xl flex flex-col items-center gap-2 hover:border-rose-600 transition-all">
@@ -253,7 +259,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                     <div className="p-4 bg-slate-900 rounded-2xl border border-emerald-500/20 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Music className="text-emerald-500" size={16} />
-                        <span className="text-xs font-bold truncate max-w-[150px]">الأغنية مضافة بنجاح</span>
+                        <span className="text-xs font-bold truncate max-w-[200px]">الأغنية مضافة</span>
                       </div>
                       <button onClick={() => setEditingUser({...editingUser, songUrl: ''})} className="text-rose-500"><Trash2 size={14}/></button>
                     </div>
@@ -261,7 +267,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
 
                   <div className="flex flex-wrap gap-2">
                     {editingUser.images?.map((img, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden group">
+                      <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden group border border-white/5">
                         <img src={img} className="w-full h-full object-cover" />
                         <button 
                           onClick={() => setEditingUser({...editingUser, images: editingUser.images?.filter((_, idx) => idx !== i)})}
@@ -271,47 +277,56 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                         </button>
                       </div>
                     ))}
-                    {editingUser.videos?.map((vid, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500 group flex items-center justify-center bg-black">
-                        <Video className="text-blue-500" size={20} />
-                        <button 
-                          onClick={() => setEditingUser({...editingUser, videos: editingUser.videos?.filter((_, idx) => idx !== i)})}
-                          className="absolute inset-0 bg-rose-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                    {editingUser.videos?.map((vid, i) => {
+                      const ytId = getYouTubeId(vid);
+                      return (
+                        <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500 group flex items-center justify-center bg-black">
+                          {ytId ? <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} className="w-full h-full object-cover opacity-60" /> : <Video className="text-blue-500" size={20} />}
+                          <button 
+                            onClick={() => setEditingUser({...editingUser, videos: editingUser.videos?.filter((_, idx) => idx !== i)})}
+                            className="absolute inset-0 bg-rose-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase px-2">الرسالة النهائية</label>
-                <textarea placeholder="رسالة النهاية..." rows={3} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none resize-none focus:border-rose-600 transition-all" value={editingUser.bottomMessage} onChange={e => setEditingUser({...editingUser, bottomMessage: e.target.value})} />
+                <label className="text-[10px] font-black text-slate-500 uppercase px-2">الرسالة النهائية (في أسفل الصفحة)</label>
+                <textarea placeholder="أكتب رسالة حب ختامية هنا..." rows={3} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none resize-none focus:border-rose-600 transition-all" value={editingUser.bottomMessage} onChange={e => setEditingUser({...editingUser, bottomMessage: e.target.value})} />
               </div>
               
-              <button onClick={addUser} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">نشر العمل 🚀</button>
+              <button onClick={addUser} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">نشر التجربة 🚀</button>
             </div>
           </div>
         )}
 
         {activeTab === 'content' && (
           <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-4xl mx-auto">
-             <h2 className="text-2xl font-black">المحتوى الرئيسي</h2>
+             <h2 className="text-2xl font-black">تعديل نصوص الموقع الرئيسي</h2>
              <div className="space-y-4">
-                <input className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none" value={landingContent.heroTitle} onChange={e => setLandingContent({...landingContent, heroTitle: e.target.value})} />
-                <input className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none" value={landingContent.heroSubtitle} onChange={e => setLandingContent({...landingContent, heroSubtitle: e.target.value})} />
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 px-2">العنوان الصغير</label>
+                  <input className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none focus:border-rose-600" value={landingContent.heroTitle} onChange={e => setLandingContent({...landingContent, heroTitle: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 px-2">العنوان الكبير</label>
+                  <input className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none focus:border-rose-600" value={landingContent.heroSubtitle} onChange={e => setLandingContent({...landingContent, heroSubtitle: e.target.value})} />
+                </div>
              </div>
-             <button onClick={() => saveToDB({...config, landing: landingContent})} className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xl transition-all">حفظ التعديلات 💾</button>
+             <button onClick={() => saveToDB({...config, landing: landingContent})} className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xl transition-all">حفظ التغييرات 💾</button>
           </div>
         )}
 
         {activeTab === 'settings' && (
           <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-2xl mx-auto">
-             <h2 className="text-2xl font-black">إعدادات الإدارة</h2>
+             <h2 className="text-2xl font-black">تعديل كلمة مرور الإدارة</h2>
              <input type="text" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none text-center font-bold" value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} />
-             <button onClick={() => saveToDB({...config, adminPass: newAdminPass})} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl">تغيير الباسورد 🔒</button>
+             <button onClick={() => saveToDB({...config, adminPass: newAdminPass})} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl">تحديث رمز الإدارة 🔒</button>
           </div>
         )}
       </main>
