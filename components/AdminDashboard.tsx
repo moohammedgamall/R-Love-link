@@ -16,6 +16,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: ''
   });
   const [landingContent, setLandingContent] = useState<LandingContent>(config.landing);
+  const [newAdminPass, setNewAdminPass] = useState(config.adminPass);
 
   const saveToDB = async (newConfig: AdminConfig) => {
     setIsSaving(true);
@@ -23,16 +24,25 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     if (success) {
       setConfig(newConfig);
       setIsSaving(false);
+      return true;
     } else {
-      alert('خطأ في حفظ البيانات');
+      alert('خطأ في حفظ البيانات في قاعدة البيانات');
       setIsSaving(false);
+      return false;
     }
   };
 
   const handleLandingUpdate = async () => {
     const newConfig = { ...config, landing: landingContent };
-    await saveToDB(newConfig);
-    alert('تم تحديث محتوى الموقع بنجاح! 🎉');
+    const ok = await saveToDB(newConfig);
+    if (ok) alert('تم تحديث محتوى الموقع بنجاح! 🎉');
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!newAdminPass.trim()) return alert('الباسورد لا يمكن أن يكون فارغاً');
+    const newConfig = { ...config, adminPass: newAdminPass.trim() };
+    const ok = await saveToDB(newConfig);
+    if (ok) alert('تم تحديث رمز دخول الإدارة! 🔐');
   };
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -59,7 +69,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
       return;
     }
     
-    // تأمين التاريخ: إذا كان فارغاً نضع تاريخ اللحظة الحالية
     const finalDate = editingUser.startDate ? new Date(editingUser.startDate).toISOString() : new Date().toISOString();
 
     const user = { 
@@ -73,9 +82,11 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     } as UserPageData;
     
     const newConfig = { ...config, users: [...config.users, user] };
-    await saveToDB(newConfig);
-    setEditingUser({ id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: '' });
-    alert('تم إضافة العميل بنجاح! ✅');
+    const ok = await saveToDB(newConfig);
+    if (ok) {
+      setEditingUser({ id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: '' });
+      alert('تم إضافة العميل بنجاح! ✅');
+    }
   };
 
   const deleteUser = async (id: string) => {
@@ -92,7 +103,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-center justify-center">
           <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl border border-slate-800 flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="font-black text-rose-500 animate-pulse text-lg">جاري الحفظ والمزامنة...</span>
+            <span className="font-black text-rose-500 animate-pulse text-lg">جاري الحفظ والمزامنة السحابية...</span>
           </div>
         </div>
       )}
@@ -104,7 +115,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
             <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-rose-600/20 rotate-3">👑</div>
             <div>
               <h1 className="text-xl font-black tracking-tight">لوحة الإدارة</h1>
-              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">System Online</p>
+              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Database Linked</p>
             </div>
           </div>
           <button 
@@ -117,6 +128,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 pt-32">
+        {/* Navigation Tabs */}
         <div className="flex p-1.5 bg-slate-900/50 rounded-2xl border border-white/5 mb-10 w-full max-w-2xl mx-auto">
           <button 
             onClick={() => setActiveTab('users')}
@@ -128,7 +140,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
             onClick={() => setActiveTab('content')}
             className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'content' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
           >
-            <span>📝</span> محتوى الموقع
+            <span>📝</span> المحتوى
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
@@ -189,7 +201,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   </div>
 
                   <div className="space-y-2 text-right">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">تاريخ البداية</label>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">تاريخ البداية (اختياري)</label>
                     <input 
                       type="date"
                       className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none transition-all text-white"
@@ -211,8 +223,12 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {editingUser.images?.map((img, i) => (
-                        <div key={i} className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-xl border border-white/10">
-                          <img src={img} className="w-full h-full object-cover" />
+                        <div key={i} className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-xl border border-white/10 group">
+                           <img src={img} className="w-full h-full object-cover" />
+                           <button 
+                            onClick={() => setEditingUser(prev => ({...prev, images: prev.images?.filter((_, idx) => idx !== i)}))}
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                           >❌</button>
                         </div>
                       ))}
                     </div>
@@ -221,7 +237,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   <div className="space-y-2 text-right">
                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest">رسالة النهاية</label>
                     <textarea 
-                      placeholder="كلمة حلوة.." rows={3}
+                      placeholder="كلمة حلوة تظهر في أسفل الصفحة.." rows={3}
                       className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none transition-all text-white font-bold resize-none"
                       value={editingUser.bottomMessage}
                       onChange={e => setEditingUser({...editingUser, bottomMessage: e.target.value})}
@@ -238,7 +254,71 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
               </div>
             </div>
           )}
-          {/* ... باقي التبويبات تظل كما هي ... */}
+
+          {activeTab === 'content' && (
+            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-4xl mx-auto">
+              <h2 className="text-2xl font-black">تعديل محتوى الصفحة الرئيسية</h2>
+              
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2 text-right">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">العنوان الرئيسي</label>
+                  <input 
+                    className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold"
+                    value={landingContent.heroTitle}
+                    onChange={e => setLandingContent({...landingContent, heroTitle: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2 text-right">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">العنوان الفرعي (المتحرك)</label>
+                  <input 
+                    className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold"
+                    value={landingContent.heroSubtitle}
+                    onChange={e => setLandingContent({...landingContent, heroSubtitle: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-right">
+                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">نص زر الدعوة (Hero CTA)</label>
+                <input 
+                  className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold"
+                  value={landingContent.heroCta}
+                  onChange={e => setLandingContent({...landingContent, heroCta: e.target.value})}
+                />
+              </div>
+
+              <button 
+                onClick={handleLandingUpdate}
+                className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-emerald-700 transition-all"
+              >
+                تحديث المحتوى العام 💾
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-2xl mx-auto text-right">
+              <h2 className="text-2xl font-black">إعدادات النظام</h2>
+              
+              <div className="space-y-4">
+                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">رمز دخول الإدارة الجديد</label>
+                <input 
+                  type="text"
+                  className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold text-center text-2xl tracking-[0.2em]"
+                  value={newAdminPass}
+                  onChange={e => setNewAdminPass(e.target.value)}
+                />
+                <p className="text-xs text-slate-500 font-bold">هذا الرمز هو الذي تستخدمه للدخول لهذه اللوحة. احفظه جيداً!</p>
+              </div>
+
+              <button 
+                onClick={handlePasswordUpdate}
+                className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-600/20"
+              >
+                تغيير كلمة السر 🔒
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>

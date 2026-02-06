@@ -106,17 +106,20 @@ export const dbAPI = {
 
     if (supabase) {
       try {
-        await supabase.from('site_config').upsert({ 
+        // 1. تحديث الإعدادات العامة
+        const { error: configError } = await supabase.from('site_config').upsert({ 
           id: 1, 
           admin_pass: config.adminPass, 
           landing_data: config.landing 
         });
         
+        if (configError) throw configError;
+
+        // 2. تحديث قائمة المستخدمين
         const realUsers = config.users.filter(u => !u.id.startsWith('demo-')).map(u => ({
           id: u.id,
           target_name: u.targetName,
           password: u.password,
-          // Fixed: Use camelCase properties from UserPageData interface
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
@@ -124,21 +127,26 @@ export const dbAPI = {
         }));
 
         if (realUsers.length > 0) {
-          await supabase.from('users_pages').upsert(realUsers);
+          const { error: userError } = await supabase.from('users_pages').upsert(realUsers);
+          if (userError) throw userError;
         }
-      } catch (e) { console.error("Supabase Save Error:", e); }
+      } catch (e) { 
+        console.error("Supabase Save Error:", e); 
+        return false;
+      }
     }
     return true;
   },
 
-  async authenticateUser(pass: string): Promise<UserPageData | null> {
+  async authenticateUser(pass: string | null): Promise<UserPageData | null> {
+    if (!pass) return null;
     const config = await this.getConfig();
-    const cleanPass = pass.trim(); // تنظيف المسافات من الإدخال
-    // البحث عن مستخدم بكلمة سر مطابقة (مع تجاهل المسافات في المخزن أيضاً)
+    const cleanPass = pass.trim();
     return config.users.find(u => u.password.trim() === cleanPass) || null;
   },
 
-  async authenticateAdmin(pass: string): Promise<boolean> {
+  async authenticateAdmin(pass: string | null): Promise<boolean> {
+    if (!pass) return false;
     const config = await this.getConfig();
     return config.adminPass.trim() === pass.trim();
   }
