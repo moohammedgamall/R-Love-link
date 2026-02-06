@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { dbAPI } from '../services/dbService';
 import { AdminConfig, UserPageData, LandingContent } from '../types';
+import { Copy, Check, ExternalLink } from 'lucide-react';
 
 interface Props {
   config: AdminConfig;
@@ -12,24 +13,28 @@ interface Props {
 const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'users' | 'content' | 'settings'>('users');
   const [isSaving, setIsSaving] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<Partial<UserPageData>>({
     id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: ''
   });
   const [landingContent, setLandingContent] = useState<LandingContent>(config.landing);
   const [newAdminPass, setNewAdminPass] = useState(config.adminPass);
 
+  const copyToClipboard = (pass: string) => {
+    const url = `${window.location.origin}/v/${pass}`;
+    navigator.clipboard.writeText(url);
+    setCopyStatus(pass);
+    setTimeout(() => setCopyStatus(null), 2000);
+  };
+
   const saveToDB = async (newConfig: AdminConfig) => {
     setIsSaving(true);
-    // نقوم بالتحديث محلياً فوراً
     setConfig(newConfig);
-    
-    // المزامنة مع السحاب في الخلفية
     const success = await dbAPI.saveConfig(newConfig);
     if (success) {
       const finalConfig = await dbAPI.getConfig();
       setConfig(finalConfig);
     }
-    
     setIsSaving(false);
     return true;
   };
@@ -46,7 +51,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files) as File[];
-      // تحسين سرعة الرفع بتقليل حجم الصور برمجياً قد يكون أفضل مستقبلاً، حالياً نحولها لـ Base64
       const base64Images = await Promise.all(files.map(file => fileToBase64(file)));
       setEditingUser(prev => ({ ...prev, images: [...(prev.images || []), ...base64Images] }));
     }
@@ -118,11 +122,29 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                <h3 className="text-sm font-black text-slate-500 mb-4 uppercase">العملاء ({config.users.length})</h3>
                <div className="space-y-3">
                  {config.users.map(u => (
-                   <div key={u.id} className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl flex items-center justify-between">
-                     <button onClick={() => deleteUser(u.id)} className="w-8 h-8 rounded-lg bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all">🗑️</button>
-                     <div className="text-right">
-                       <p className="font-black text-sm">{u.targetName}</p>
-                       <p className="text-[10px] text-slate-500">الباسورد: {u.password}</p>
+                   <div key={u.id} className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl flex flex-col gap-3">
+                     <div className="flex items-center justify-between w-full">
+                        <button onClick={() => deleteUser(u.id)} className="w-8 h-8 rounded-lg bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center text-xs">🗑️</button>
+                        <div className="text-right">
+                          <p className="font-black text-sm">{u.targetName}</p>
+                          <p className="text-[10px] text-slate-500">الباسورد: {u.password}</p>
+                        </div>
+                     </div>
+                     <div className="flex gap-2">
+                        <button 
+                          onClick={() => copyToClipboard(u.password)}
+                          className={`flex-1 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-all ${copyStatus === u.password ? 'bg-emerald-500 text-white' : 'bg-white/5 hover:bg-white/10 text-slate-400'}`}
+                        >
+                          {copyStatus === u.password ? <Check size={12} /> : <Copy size={12} />}
+                          {copyStatus === u.password ? 'تم النسخ' : 'نسخ الرابط'}
+                        </button>
+                        <a 
+                          href={`/v/${u.password}`} 
+                          target="_blank" 
+                          className="w-10 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center transition-all"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
                      </div>
                    </div>
                  ))}
@@ -132,14 +154,14 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
             <div className="lg:col-span-2 bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8">
               <h2 className="text-2xl font-black">إضافة صفحة جديدة ✨</h2>
               <div className="grid sm:grid-cols-2 gap-6">
-                 <input placeholder="اسم العميل (سارة مثلاً)" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none" value={editingUser.targetName} onChange={e => setEditingUser({...editingUser, targetName: e.target.value})} />
-                 <input placeholder="رمز الدخول (الباسورد)" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none" value={editingUser.password} onChange={e => setEditingUser({...editingUser, password: e.target.value})} />
+                 <input placeholder="اسم العميل (سارة مثلاً)" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none focus:border-rose-600 transition-all" value={editingUser.targetName} onChange={e => setEditingUser({...editingUser, targetName: e.target.value})} />
+                 <input placeholder="رمز الدخول (الباسورد)" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none focus:border-rose-600 transition-all" value={editingUser.password} onChange={e => setEditingUser({...editingUser, password: e.target.value})} />
               </div>
               <input type="date" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none text-slate-400" value={editingUser.startDate?.split('T')[0]} onChange={e => setEditingUser({...editingUser, startDate: e.target.value})} />
               
               <div className="space-y-4">
                 <label className="text-xs font-black text-slate-500">الصور</label>
-                <div className="relative p-8 border-2 border-dashed border-white/10 rounded-2xl text-center bg-slate-950/50">
+                <div className="relative p-8 border-2 border-dashed border-white/10 rounded-2xl text-center bg-slate-950/50 hover:border-rose-600/50 transition-all">
                   <input type="file" multiple accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
                   <p className="text-sm text-slate-500">اضغط هنا لرفع الصور</p>
                 </div>
@@ -147,13 +169,13 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                    {editingUser.images?.map((img, i) => (
                      <div key={i} className="w-16 h-16 rounded-xl overflow-hidden relative border border-white/10">
                        <img src={img} className="w-full h-full object-cover" />
-                       <button onClick={() => setEditingUser({...editingUser, images: editingUser.images?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-black/50 text-[10px] flex items-center justify-center">حذف</button>
+                       <button onClick={() => setEditingUser({...editingUser, images: editingUser.images?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-black/50 text-[10px] flex items-center justify-center opacity-0 hover:opacity-100 transition-all">حذف</button>
                      </div>
                    ))}
                 </div>
               </div>
 
-              <textarea placeholder="رسالة النهاية..." rows={3} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none resize-none" value={editingUser.bottomMessage} onChange={e => setEditingUser({...editingUser, bottomMessage: e.target.value})} />
+              <textarea placeholder="رسالة النهاية..." rows={3} className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none resize-none focus:border-rose-600 transition-all" value={editingUser.bottomMessage} onChange={e => setEditingUser({...editingUser, bottomMessage: e.target.value})} />
               
               <button onClick={addUser} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">نشر العمل 🚀</button>
             </div>

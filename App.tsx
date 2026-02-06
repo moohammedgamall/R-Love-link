@@ -29,6 +29,33 @@ const App: React.FC = () => {
     setConfig(data);
   }, []);
 
+  // دالة التنقل المخصصة
+  const navigate = (newPath: string) => {
+    window.history.pushState({}, '', newPath);
+    setPath(newPath);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // التحقق من الرابط الديناميكي /v/password
+  useEffect(() => {
+    const checkDirectLink = async () => {
+      if (path.startsWith('/v/')) {
+        const passFromUrl = path.split('/v/')[1];
+        if (passFromUrl) {
+          const user = await dbAPI.authenticateUser(passFromUrl);
+          if (user) {
+            setCurrentUser(user);
+          } else {
+            // إذا كان الكود خطأ، نرجعه للرئيسية أو نطلب منه الباسورد
+            setIsPromptingPassword(true);
+            setPrefilledPass(passFromUrl);
+          }
+        }
+      }
+    };
+    if (!isLoading) checkDirectLink();
+  }, [path, isLoading]);
+
   useEffect(() => {
     const initDB = async () => {
       await refreshData();
@@ -45,29 +72,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  const navigate = (newPath: string) => {
-    window.history.pushState({}, '', newPath);
-    setPath(newPath);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const allExamples = useMemo(() => {
     if (!config) return [];
-    
-    // النماذج التجريبية تفتح تلقائياً
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
-    
-    // أعمال العملاء تتطلب كلمة مرور (لا تفتح تلقائياً)
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
         title: `توثيق لـ ${u.targetName}`,
         pass: u.password,
-        color: 'bg-slate-800', // لون داكن ليعبر عن الخصوصية
+        color: 'bg-slate-800',
         icon: '❤️',
-        showPass: false // <--- سيجبر المستخدم على إدخال الباسورد يدوياً
+        showPass: false
       }));
-    
     return [...staticExamples, ...clientExamples];
   }, [config]);
 
@@ -82,39 +98,26 @@ const App: React.FC = () => {
       return;
     }
 
-    // البحث في البيانات المحملة
-    const localUser = config?.users.find(u => u.password.trim() === cleanPass);
-    if (localUser) {
-      setCurrentUser(localUser);
-      setIsPromptingPassword(false);
-      setPrefilledPass('');
-      navigate('/view');
-      return;
-    }
-
-    // التحقق السحابي الإضافي
     const user = await dbAPI.authenticateUser(cleanPass);
     if (user) {
       setCurrentUser(user);
       setIsPromptingPassword(false);
       setPrefilledPass('');
-      navigate('/view');
+      navigate(`/v/${cleanPass}`);
+      return;
+    }
+
+    if (!isAuto) {
+      alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
     } else {
-      if (!isAuto) {
-        alert('الرمز الذي أدخلته غير صحيح.. يرجى التأكد من صاحب الهدية');
-      } else {
-        // إذا كان ضغطاً تلقائياً وفشل، نفتح صفحة الدخول ليجرب المستخدم بنفسه
-        setIsPromptingPassword(true);
-      }
+      setIsPromptingPassword(true);
     }
   };
 
   const handleExampleClick = (pass?: string) => {
     if (pass) {
-      // إذا كان مسموح بعرض الباسورد، نقوم بالدخول تلقائياً
       handleLogin(pass, true);
     } else {
-      // إذا كان عملاً خاصاً، نفتح بوابة الدخول
       setPrefilledPass('');
       setIsPromptingPassword(true);
     }
@@ -147,7 +150,8 @@ const App: React.FC = () => {
           </div>;
     }
 
-    if (path === '/view' && currentUser) {
+    // إذا كان المسار يبدأ بـ /v/ وهناك مستخدم مسجل
+    if (path.startsWith('/v/') && currentUser) {
       return <PersonalPage data={currentUser} onLogout={handleLogout} />;
     }
 

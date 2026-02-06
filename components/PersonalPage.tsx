@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserPageData } from '../types';
-import { LogOut, Music } from 'lucide-react';
+import { LogOut, Music, Share2, Check } from 'lucide-react';
 
 interface Props {
   data: UserPageData;
@@ -10,6 +10,7 @@ interface Props {
 
 const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -31,6 +32,21 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
     return () => clearInterval(timer);
   }, [data.startDate]);
 
+  const handleShare = () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({
+        title: `هدية رقمية لـ ${data.targetName}`,
+        text: 'شوف الهدية المميزة دي من R Love Link ❤️',
+        url: url,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const displayTime = timeLeft || { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
 
   const labels: Record<string, string> = {
@@ -45,9 +61,17 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
            <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 animate-pulse text-xl">❤️</div>
            <h1 className="text-xl font-black text-slate-800">{data.targetName}</h1>
         </div>
-        <button onClick={onLogout} className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-rose-600 active:scale-90 transition-all border border-slate-100 flex items-center justify-center">
-          <LogOut size={22} strokeWidth={2.5} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleShare} 
+            className={`p-3 rounded-2xl transition-all border flex items-center justify-center ${copied ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-100 hover:text-rose-600 active:scale-90'}`}
+          >
+            {copied ? <Check size={22} strokeWidth={2.5} /> : <Share2 size={22} strokeWidth={2.5} />}
+          </button>
+          <button onClick={onLogout} className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-rose-600 active:scale-90 transition-all border border-slate-100 flex items-center justify-center">
+            <LogOut size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 space-y-12 mt-10 animate-in fade-in slide-in-from-bottom-10 duration-1000">
