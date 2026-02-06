@@ -12,22 +12,26 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
-  // وظيفة ذكية لتحويل روابط المشاركة العادية إلى روابط ملفات مباشرة
+  // وظيفة ذكية ومطورة لتحويل الروابط إلى ملفات مباشرة قابلة للتشغيل
   const getDirectLink = (url: string) => {
     if (!url) return '';
     let directUrl = url.trim();
 
-    // معالجة روابط Google Drive
+    // معالجة متقدمة لروابط Google Drive
     if (directUrl.includes('drive.google.com')) {
-      const fileIdMatch = directUrl.match(/\/d\/(.+?)\/(view|edit|usp=shared)?/);
+      // استخراج ID الملف بأكثر من طريقة (سواء كان /d/ أو id=)
+      const fileIdMatch = directUrl.match(/(?:\/d\/|id=)([\w-]+)/);
       if (fileIdMatch && fileIdMatch[1]) {
-        return `https://docs.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+        // الرابط المباشر الأكثر استقراراً للتشغيل والتحميل
+        return `https://drive.google.com/uc?id=${fileIdMatch[1]}&export=download`;
       }
     }
 
-    // معالجة روابط Dropbox
+    // معالجة متقدمة لروابط Dropbox
     if (directUrl.includes('dropbox.com')) {
-      return directUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '').replace('?dl=1', '');
+      return directUrl
+        .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+        .replace(/[?&]dl=[01]/g, ''); // إزالة معاملات التحميل التي قد تعيق البث
     }
 
     return directUrl;
@@ -127,6 +131,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
                 <audio 
                   key={data.songUrl}
                   controls 
+                  preload="auto"
                   className="w-full h-10 rounded-full opacity-90 brightness-200"
                   src={getDirectLink(data.songUrl)}
                 >
@@ -163,6 +168,7 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
                         key={vid}
                         controls 
                         playsInline
+                        preload="metadata"
                         className="w-full h-full object-contain"
                         src={directVid}
                       >
@@ -207,13 +213,4 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           </p>
           <div className="flex justify-center items-center gap-2">
             <Heart fill="currentColor" size={12} className="text-rose-200" />
-            <p className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">Love Forever</p>
-            <Heart fill="currentColor" size={12} className="text-rose-200" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default PersonalPage;
+            <p className="text-[10px
