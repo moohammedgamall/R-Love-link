@@ -1,5 +1,5 @@
 
-import { Heart, Cake, Gift, Star, Sparkles, ChevronLeft, Lock } from 'lucide-react';
+import { Heart, Cake, Gift, Star, Sparkles, ChevronLeft, Lock, Key } from 'lucide-react';
 import React from 'react';
 import { LandingExample } from '../types';
 
@@ -33,7 +33,7 @@ const Examples: React.FC<Props> = ({ items, onItemClick }) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 px-2">
+      <div className="grid grid-cols-1 gap-8 px-2">
         {items.length === 0 ? (
           <div className="text-center py-20 bg-white/50 rounded-[2.5rem] border border-dashed border-slate-200">
              <div className="text-4xl mb-4">✨</div>
@@ -43,39 +43,41 @@ const Examples: React.FC<Props> = ({ items, onItemClick }) => {
           items.map((sample, i) => (
             <div 
               key={i} 
-              onClick={() => onItemClick(sample.showPass ? sample.pass : undefined)}
-              className="group relative bg-white border border-slate-100 p-6 rounded-[2.2rem] flex items-center justify-between hover:border-rose-200 hover:shadow-2xl hover:shadow-rose-500/5 transition-all duration-500 cursor-pointer active:scale-[0.97] shadow-sm"
+              className="relative group pt-4"
             >
+              {/* Password Badge - Always shown and styled prominently */}
               {sample.showPass && (
-                <div className="absolute -top-3 right-6 z-20 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg border-2 border-white flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                  رمز الدخول: {sample.pass}
+                <div className="absolute top-0 right-6 z-20 bg-rose-600 text-white px-4 py-1.5 rounded-full text-[11px] font-black shadow-lg border-2 border-white flex items-center gap-2 group-hover:scale-110 transition-transform">
+                  <Key size={12} strokeWidth={3} />
+                  <span>رمز الدخول:</span>
+                  <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono">{sample.pass}</span>
                 </div>
               )}
 
-              <div className={`w-14 h-14 ${sample.color || 'bg-rose-600'} rounded-2xl flex items-center justify-center shadow-md text-white group-hover:scale-110 transition-transform shrink-0`}>
-                {renderIcon(sample.icon)}
-              </div>
-              
-              <div className="text-right flex-1 pr-6">
-                <h4 className="text-lg font-black text-slate-800 group-hover:text-rose-600 transition-colors leading-tight">
-                  {sample.title}
-                </h4>
-                
-                <div className="mt-1.5">
-                  {sample.showPass ? (
-                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">معاينة مفتوحة ✨</span>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold">
-                      <Lock size={12} />
-                      <span>محمي بكلمة سر</span>
-                    </div>
-                  )}
+              <div 
+                onClick={() => onItemClick(sample.showPass ? sample.pass : undefined)}
+                className="bg-white border border-slate-100 p-6 rounded-[2.2rem] flex items-center justify-between hover:border-rose-300 hover:shadow-2xl hover:shadow-rose-500/10 transition-all duration-500 cursor-pointer active:scale-[0.97] shadow-sm overflow-visible"
+              >
+                <div className={`w-14 h-14 ${sample.color || 'bg-rose-600'} rounded-2xl flex items-center justify-center shadow-md text-white group-hover:scale-110 transition-transform shrink-0`}>
+                  {renderIcon(sample.icon)}
                 </div>
-              </div>
+                
+                <div className="text-right flex-1 pr-6">
+                  <h4 className="text-lg font-black text-slate-800 group-hover:text-rose-600 transition-colors leading-tight">
+                    {sample.title}
+                  </h4>
+                  
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-[10px] text-rose-500 font-bold bg-rose-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      <Sparkles size={10} />
+                      معاينة حية
+                    </span>
+                  </div>
+                </div>
 
-              <div className="text-slate-200 group-hover:text-rose-400 transition-colors pl-2">
-                <ChevronLeft size={24} strokeWidth={2} />
+                <div className="text-slate-200 group-hover:text-rose-400 transition-colors pl-2">
+                  <ChevronLeft size={24} strokeWidth={2} />
+                </div>
               </div>
             </div>
           ))

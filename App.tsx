@@ -29,7 +29,6 @@ const App: React.FC = () => {
     setConfig(data);
   }, []);
 
-  // تحديث البيانات عند تغيير القسم لضمان جلب الأعمال الجديدة من السحاب
   useEffect(() => {
     if (activeSection === 'examples') {
       refreshData();
@@ -79,6 +78,7 @@ const App: React.FC = () => {
 
   const allExamples = useMemo(() => {
     if (!config) return [];
+    // جعل showPass دائماً true لإظهار كلمة السر فوق كل عمل
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
@@ -87,7 +87,7 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-slate-800',
         icon: '❤️',
-        showPass: false
+        showPass: true // تم التغيير من false إلى true
       }));
     return [...staticExamples, ...clientExamples];
   }, [config]);
