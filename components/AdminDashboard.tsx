@@ -74,8 +74,9 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
   };
 
   const addMediaViaUrl = () => {
-    if (!mediaUrlInput.url.trim()) return;
     const url = mediaUrlInput.url.trim();
+    if (!url) return;
+    
     if (mediaUrlInput.type === 'image') setEditingUser(prev => ({ ...prev, images: [...(prev.images || []), url] }));
     if (mediaUrlInput.type === 'video') setEditingUser(prev => ({ ...prev, videos: [...(prev.videos || []), url] }));
     if (mediaUrlInput.type === 'audio') setEditingUser(prev => ({ ...prev, songUrl: url }));
@@ -93,9 +94,9 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
       targetName: editingUser.targetName.trim(),
       password: editingUser.password.trim(),
       startDate: editingUser.startDate || new Date().toISOString(),
-      songUrl: editingUser.songUrl || '',
-      images: editingUser.images || [],
-      videos: editingUser.videos || [],
+      songUrl: editingUser.songUrl?.trim() || '',
+      images: (editingUser.images || []).map(i => i.trim()),
+      videos: (editingUser.videos || []).map(v => v.trim()),
       bottomMessage: editingUser.bottomMessage || ''
     } as UserPageData;
     
@@ -144,7 +145,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
 
         {activeTab === 'users' && (
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* القائمة الجانبية للعملاء */}
             <div className="lg:col-span-1 bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 max-h-[80vh] overflow-y-auto">
                <h3 className="text-sm font-black text-slate-500 mb-4 uppercase tracking-widest">العملاء ({config.users.length})</h3>
                <div className="space-y-3">
@@ -178,7 +178,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                </div>
             </div>
 
-            {/* فورم الإنشاء */}
             <div className="lg:col-span-2 bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8">
               <h2 className="text-2xl font-black flex items-center gap-3">إنشاء تجربة جديدة <span className="text-rose-600 animate-pulse">✨</span></h2>
               
@@ -198,7 +197,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                 <input type="date" className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl outline-none text-slate-400" value={editingUser.startDate?.split('T')[0]} onChange={e => setEditingUser({...editingUser, startDate: e.target.value})} />
               </div>
 
-              {/* Media Section */}
               <div className="space-y-6 bg-slate-950/40 p-6 rounded-3xl border border-white/5">
                 <h3 className="text-lg font-black border-r-4 border-rose-600 pr-4">إضافة الوسائط (روابط أو ملفات)</h3>
                 
@@ -217,7 +215,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   ))}
                 </div>
 
-                {/* رابط مياشر */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
@@ -253,7 +250,6 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   </label>
                 </div>
 
-                {/* Preview Lists */}
                 <div className="space-y-4">
                   {editingUser.songUrl && (
                     <div className="p-4 bg-slate-900 rounded-2xl border border-emerald-500/20 flex items-center justify-between">

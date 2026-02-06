@@ -12,7 +12,27 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
-  // وظيفة للتحقق مما إذا كان الرابط هو فيديو يوتيوب
+  // وظيفة ذكية لتحويل روابط المشاركة العادية إلى روابط ملفات مباشرة
+  const getDirectLink = (url: string) => {
+    if (!url) return '';
+    let directUrl = url.trim();
+
+    // معالجة روابط Google Drive
+    if (directUrl.includes('drive.google.com')) {
+      const fileIdMatch = directUrl.match(/\/d\/(.+?)\/(view|edit|usp=shared)?/);
+      if (fileIdMatch && fileIdMatch[1]) {
+        return `https://docs.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+      }
+    }
+
+    // معالجة روابط Dropbox
+    if (directUrl.includes('dropbox.com')) {
+      return directUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '').replace('?dl=1', '');
+    }
+
+    return directUrl;
+  };
+
   const getYouTubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -55,7 +75,6 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
   };
 
   const displayTime = timeLeft || { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
-
   const labels: Record<string, string> = {
     years: 'سنة', months: 'شهر', days: 'يوم',
     hours: 'ساعة', minutes: 'دقيقة', seconds: 'ثانية'
@@ -105,12 +124,11 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
               </div>
               <div className="w-full">
                 <p className="text-center text-[10px] font-bold text-rose-400 mb-4 uppercase tracking-[0.3em]">Playing Your Memory</p>
-                {/* استخدام src مباشرة مع key لضمان التحديث */}
                 <audio 
                   key={data.songUrl}
                   controls 
                   className="w-full h-10 rounded-full opacity-90 brightness-200"
-                  src={data.songUrl}
+                  src={getDirectLink(data.songUrl)}
                 >
                   متصفحك لا يدعم تشغيل الصوت.
                 </audio>
@@ -119,7 +137,6 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           </div>
         )}
 
-        {/* Video Gallery */}
         {data.videos && data.videos.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 px-2">
@@ -129,12 +146,13 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
             <div className="grid grid-cols-1 gap-6">
               {data.videos.map((vid, idx) => {
                 const youtubeId = getYouTubeId(vid);
+                const directVid = getDirectLink(vid);
                 return (
                   <div key={idx} className="ios-card overflow-hidden bg-black aspect-video shadow-2xl border-4 border-white relative group">
                     {youtubeId ? (
                       <iframe
                         className="w-full h-full"
-                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                        src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
                         title="YouTube video player"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -144,8 +162,9 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
                       <video 
                         key={vid}
                         controls 
+                        playsInline
                         className="w-full h-full object-contain"
-                        src={vid}
+                        src={directVid}
                       >
                         متصفحك لا يدعم تشغيل الفيديو.
                       </video>
@@ -157,7 +176,6 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
           </div>
         )}
 
-        {/* Image Gallery */}
         <div className="space-y-6">
           <div className="flex items-center gap-3 px-2">
             <div className="w-1.5 h-6 bg-rose-600 rounded-full"></div>
@@ -167,10 +185,13 @@ const PersonalPage: React.FC<Props> = ({ data, onLogout }) => {
             {data.images.map((img, idx) => (
               <div key={idx} className="ios-card overflow-hidden aspect-square border-4 border-white group relative shadow-md">
                 <img 
-                  src={img} 
+                  src={getDirectLink(img)} 
                   alt="" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" 
                   loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Image+Error';
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
