@@ -51,14 +51,14 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // معالجة قائمة الأعمال لعرضها في المعرض
+  // معالجة قائمة الأعمال لعرضها في المعرض مع إظهار كلمة السر دائماً
   const allExamples = useMemo(() => {
     if (!config) return [];
     
-    // 1. النماذج الثابتة (دائماً تظهر الباسورد للمعاينة)
+    // 1. النماذج الثابتة
     const staticExamples = config.landing.examples.map(ex => ({ ...ex, showPass: true }));
     
-    // 2. أعمال العملاء الحقيقية (لا تظهر الباسورد، تطلب الإدخال يدوياً)
+    // 2. أعمال العملاء الحقيقية (الآن تظهر كلمة السر فوق الكرت كما طلب المستخدم)
     const clientExamples: LandingExample[] = config.users
       .filter(u => !u.id.startsWith('demo-')) 
       .map(u => ({
@@ -66,7 +66,7 @@ const App: React.FC = () => {
         pass: u.password,
         color: 'bg-rose-600',
         icon: '❤️',
-        showPass: false // إخفاء الباسورد للحماية والخصوصية
+        showPass: true // تم التغيير لـ true لعرض كلمة السر فوق الكرت
       }));
 
     return [...staticExamples, ...clientExamples];
@@ -134,7 +134,7 @@ const App: React.FC = () => {
 
     return (
       <div className="flex flex-col items-center">
-        <Navbar onLoginClick={() => setIsPromptingPassword(true)} />
+        <Navbar onLoginClick={() => setIsPromptingPassword(true)} hideLogin={true} />
         <main className="w-full max-w-2xl mx-auto px-4 pt-28 pb-40">
           {activeSection === 'home' && <Hero content={config.landing} onCategoryClick={() => setActiveSection('order')} />}
           {activeSection === 'examples' && <Examples items={allExamples} onItemClick={handleExampleClick} />}
