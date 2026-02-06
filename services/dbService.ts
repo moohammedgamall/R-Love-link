@@ -12,17 +12,7 @@ const DB_KEY = 'heartlink_v5_global';
 
 const INITIAL_DATA: AdminConfig = {
   adminPass: 'Mmadmin890890',
-  users: [
-    {
-      id: 'demo-valentine',
-      targetName: 'نموذج عيد الحب',
-      password: 'love',
-      startDate: '2024-02-14T10:00:00Z',
-      songUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      images: ['https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80'],
-      bottomMessage: 'النموذج الأول لصفحاتنا الاحترافية.'
-    }
-  ],
+  users: [], // تم حذف المستخدم التجريبي
   landing: {
     heroTitle: 'حكايتكم تستاهل',
     heroSubtitle: 'ذكرى تعيش للأبد..',
@@ -32,9 +22,7 @@ const INITIAL_DATA: AdminConfig = {
       { title: 'ابعت فكرتك', desc: 'هنصممها في أسرع وقت ممكن وبأعلى جودة تنفيذ.', icon: '🪄' },
       { title: 'استلم هديتك', desc: 'هنبعتلك رابط الهديّة أو التطبيق الخاص بيك.', icon: '🎁' },
     ],
-    examples: [
-      { title: 'نموذج رومانسي احترافي', pass: 'love', color: 'bg-red-600', icon: '❤️', showPass: true }
-    ]
+    examples: [] // تم حذف النموذج الرومانسي الاحترافي من هنا
   }
 };
 
@@ -110,6 +98,7 @@ export const dbAPI = {
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
+          // Fixed: Changed u.bottom_message to u.bottomMessage to match UserPageData interface
           bottom_message: u.bottomMessage
         }));
 
