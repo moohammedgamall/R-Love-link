@@ -30,11 +30,17 @@ const App: React.FC = () => {
     setConfig(data);
   }, []);
 
+  // تحديث البيانات عند تغيير القسم لضمان جلب الأعمال الجديدة من السحاب
+  useEffect(() => {
+    if (activeSection === 'examples') {
+      refreshData();
+    }
+  }, [activeSection, refreshData]);
+
   const navigate = (newPath: string) => {
     window.history.pushState({}, '', newPath);
     setPath(newPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // عند الانتقال لصفحة الأعمال، نحدث البيانات
     if (newPath === '/') refreshData();
   };
 
