@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LandingExample } from '../types';
-import { Heart, Cake, Gift, Star, Sparkles, ChevronLeft } from 'lucide-react';
+import { Heart, Cake, Gift, Star, Sparkles, ChevronLeft, Lock } from 'lucide-react';
 
 interface Props {
   items: LandingExample[];
@@ -9,108 +9,77 @@ interface Props {
 }
 
 const Examples: React.FC<Props> = ({ items, onItemClick }) => {
-  // دالة لتحويل الرموز النصية إلى أيقونات Lucide
   const renderIcon = (iconStr?: string) => {
-    const props = { size: 32, strokeWidth: 2.5 };
+    const props = { size: 28, strokeWidth: 2.5 };
     switch (iconStr) {
       case '❤️': return <Heart {...props} fill="currentColor" />;
       case '🎂': return <Cake {...props} />;
       case '🎁': return <Gift {...props} />;
-      case '💝': return <Heart {...props} fill="currentColor" />;
       case '✨': return <Sparkles {...props} />;
       case '⭐': return <Star {...props} fill="currentColor" />;
-      default: return <Heart {...props} />;
+      default: return <Heart {...props} fill="currentColor" />;
     }
   };
 
   return (
-    <div className="space-y-12 py-6 animate-in fade-in slide-in-from-bottom-6 duration-1000" dir="rtl" id="examples">
-      <div className="flex flex-col items-center text-center gap-4 mb-12">
-        <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-rose-600 shadow-xl shadow-slate-100 border border-slate-50 mb-2 rotate-3 hover:rotate-0 transition-transform duration-500">
-          <Sparkles size={40} strokeWidth={2.5} />
+    <div className="space-y-12 py-6 animate-in fade-in slide-in-from-bottom-6 duration-1000" dir="rtl">
+      <div className="flex flex-col items-center text-center gap-4 mb-10">
+        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-600 shadow-xl shadow-rose-100 border border-rose-50 mb-2 rotate-2 hover:rotate-0 transition-transform">
+          <Sparkles size={32} />
         </div>
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">معرض أعمالنا</h2>
-        <p className="text-slate-400 text-base font-bold max-w-sm leading-relaxed px-4">
-          استلهم فكرتك من نماذجنا الحقيقية.. جرب الدخول باستخدام الرمز المكتوب على الكرت ✨
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">معرض الذكريات</h2>
+        <p className="text-slate-400 text-sm font-bold max-w-xs leading-relaxed">
+          تصفح أعمالنا السابقة.. بعض الأعمال محمية بكلمة سر للحفاظ على خصوصية أصحابها 🔒
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 px-2">
+      <div className="grid grid-cols-1 gap-5 px-2">
         {items.map((sample, i) => (
           <div 
             key={i} 
-            onClick={() => onItemClick(sample.pass)}
-            className="group relative bg-white border border-slate-100 p-6 rounded-[2.8rem] flex items-center justify-between hover:border-rose-300 hover:shadow-2xl hover:shadow-rose-500/10 transition-all duration-500 cursor-pointer active:scale-[0.97] shadow-sm overflow-visible"
+            onClick={() => onItemClick(sample.showPass ? sample.pass : undefined)}
+            className="group relative bg-white border border-slate-100 p-5 rounded-[2.2rem] flex items-center justify-between hover:border-rose-200 hover:shadow-2xl hover:shadow-rose-500/5 transition-all duration-500 cursor-pointer active:scale-[0.97] shadow-sm"
           >
-            {/* Password Tag */}
+            {/* Password Badge for Public Demos */}
             {sample.showPass && (
-              <div className="absolute -top-4 right-10 z-20 bg-rose-600 text-white px-4 py-1.5 rounded-2xl text-[11px] font-black shadow-lg shadow-rose-600/30 flex items-center gap-2 border-2 border-white animate-bounce-subtle">
-                <span className="opacity-80">الرمز:</span>
-                <span className="bg-white/20 px-2 py-0.5 rounded-lg uppercase font-mono tracking-widest">{sample.pass}</span>
+              <div className="absolute -top-3 right-6 z-20 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg border-2 border-white flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                رمز الدخول: {sample.pass}
               </div>
             )}
 
-            <div className={`w-16 h-16 ${sample.color} rounded-3xl flex items-center justify-center shadow-xl text-white group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shrink-0`}>
+            <div className={`w-14 h-14 ${sample.color || 'bg-rose-600'} rounded-2xl flex items-center justify-center shadow-lg text-white group-hover:scale-110 transition-transform shrink-0`}>
               {renderIcon(sample.icon)}
             </div>
             
-            <div className="text-right flex-1 pr-6">
-              <h4 className="text-xl font-black text-slate-800 group-hover:text-rose-600 transition-colors truncate">
+            <div className="text-right flex-1 pr-5">
+              <h4 className="text-lg font-black text-slate-800 group-hover:text-rose-600 transition-colors">
                 {sample.title}
               </h4>
               
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="mt-1">
                 {sample.showPass ? (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[10px] text-emerald-700 font-black">متاح للمعاينة الفورية</span>
-                  </div>
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">معاينة مفتوحة</span>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
-                    <span className="w-2 h-2 bg-slate-300 rounded-full"></span>
-                    <p className="text-[10px] text-slate-400 font-bold tracking-tight">طلب خاص تم تسليمه</p>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
+                    <Lock size={10} />
+                    <span>تحتاج لرمز الدخول</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="text-slate-200 group-hover:text-rose-400 transition-all duration-300 transform rotate-180 mr-2">
-              <ChevronLeft size={28} strokeWidth={3} />
+            <div className="text-slate-200 group-hover:text-rose-400 transition-colors">
+              <ChevronLeft size={24} strokeWidth={3} />
             </div>
           </div>
         ))}
       </div>
 
-      <style>{`
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-        .animate-bounce-subtle {
-          animation: bounce-subtle 2s infinite ease-in-out;
-        }
-      `}</style>
-
-      <div className="pt-10 text-center space-y-10">
-         <div className="inline-block px-6 py-3 bg-white border border-slate-100 rounded-full shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-rose-600 font-black flex items-center justify-center gap-3 text-base">
-              <Sparkles className="animate-pulse" size={20} /> صمم ذكرى لا تُنسى اليوم
-            </p>
-         </div>
-         
-         <div className="grid grid-cols-2 gap-6 px-2">
-           <div className="bg-white border border-slate-100 p-10 rounded-[3rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-rose-100 transition-all group">
-              <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:scale-110 group-hover:rotate-6 transition-all">
-                <Star size={30} strokeWidth={2.5} fill="currentColor" />
-              </div>
-              <span className="font-black text-slate-700 text-xs uppercase tracking-widest">تصميم مخصص</span>
-           </div>
-           <div className="bg-white border border-slate-100 p-10 rounded-[3rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all group">
-              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:-rotate-6 transition-all">
-                <Gift size={30} strokeWidth={2.5} />
-              </div>
-              <span className="font-black text-slate-700 text-xs uppercase tracking-widest">خصوصية تامة</span>
-           </div>
+      <div className="pt-6 text-center">
+         <div className="inline-flex items-center gap-3 px-6 py-3 bg-slate-900 rounded-full text-white shadow-xl hover:bg-rose-600 transition-colors cursor-pointer group">
+            <span className="font-black text-sm">اصنع ذكرياتك الخاصة</span>
+            <Gift size={18} className="group-hover:rotate-12 transition-transform" />
          </div>
       </div>
     </div>
