@@ -39,21 +39,19 @@ export const dbAPI = {
 
         if (configRes.data) {
           config.adminPass = configRes.data.admin_pass;
-          config.landing = configRes.data.landing_data;
+          config.landing = configRes.data.landing_data || config.landing;
         }
 
         if (usersRes.data) {
-          const remoteUsers: UserPageData[] = usersRes.data
-            .filter((u: any) => !u.id.startsWith('demo-') && u.password !== 'love') 
-            .map((u: any) => ({
+          const remoteUsers: UserPageData[] = usersRes.data.map((u: any) => ({
               id: u.id,
               targetName: u.target_name,
               password: u.password,
               startDate: u.start_date,
-              songUrl: u.song_url,
-              images: u.images || [],
-              videos: u.videos || [],
-              bottomMessage: u.bottom_message
+              songUrl: u.song_url || '',
+              images: Array.isArray(u.images) ? u.images : [],
+              videos: Array.isArray(u.videos) ? u.videos : [],
+              bottomMessage: u.bottom_message || ''
             }));
           
           config.users = remoteUsers;
@@ -61,7 +59,7 @@ export const dbAPI = {
           return config;
         }
       } catch (e) {
-        console.error("Supabase Error:", e);
+        console.error("Supabase Connection Error:", e);
       }
     }
 
@@ -80,14 +78,16 @@ export const dbAPI = {
     if (!supabase) return true;
 
     try {
+      // 1. تحديث الإعدادات العامة
       await supabase.from('site_config').upsert({ 
         id: 1, 
         admin_pass: config.adminPass, 
         landing_data: config.landing 
       });
       
+      // 2. تحديث صفحات العملاء
       const realUsers = config.users
-        .filter(u => !u.id.startsWith('demo-') && u.password !== 'love')
+        .filter(u => !u.id.startsWith('demo-'))
         .map(u => ({
           id: u.id,
           target_name: u.targetName,
@@ -95,7 +95,7 @@ export const dbAPI = {
           start_date: u.startDate,
           song_url: u.songUrl,
           images: u.images,
-          videos: u.videos,
+          videos: u.videos || [],
           bottom_message: u.bottomMessage
         }));
 
@@ -105,7 +105,7 @@ export const dbAPI = {
       }
       return true;
     } catch (e) { 
-      console.error("Save Error:", e); 
+      console.error("Supabase Save Error:", e); 
       return false;
     }
   },
@@ -113,8 +113,10 @@ export const dbAPI = {
   async deleteUser(id: string): Promise<boolean> {
     if (supabase && !id.startsWith('demo-')) {
       try {
-        await supabase.from('users_pages').delete().eq('id', id);
+        const { error } = await supabase.from('users_pages').delete().eq('id', id);
+        if (error) throw error;
       } catch (e) {
+        console.error("Delete Error:", e);
         return false;
       }
     }
