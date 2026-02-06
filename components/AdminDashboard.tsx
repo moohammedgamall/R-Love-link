@@ -22,11 +22,14 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     setIsSaving(true);
     const success = await dbAPI.saveConfig(newConfig);
     if (success) {
-      setConfig(newConfig);
+      // نطلب من السيرفر أحدث نسخة للتأكد من المزامنة
+      const finalConfig = await dbAPI.getConfig();
+      setConfig(finalConfig);
       setIsSaving(false);
       return true;
     } else {
-      alert('خطأ في حفظ البيانات في قاعدة البيانات');
+      alert('حدث خطأ في المزامنة السحابية. تم حفظ التغييرات محلياً فقط.');
+      setConfig(newConfig);
       setIsSaving(false);
       return false;
     }
@@ -85,7 +88,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
     const ok = await saveToDB(newConfig);
     if (ok) {
       setEditingUser({ id: '', targetName: '', password: '', startDate: '', songUrl: '', images: [], bottomMessage: '' });
-      alert('تم إضافة العميل بنجاح ومزامنته! ✅');
+      alert('تم إضافة العميل بنجاح ومزامنته مع السحاب! ✅');
     }
   };
 
@@ -95,8 +98,9 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
       const cloudOk = await dbAPI.deleteUser(id);
       if (cloudOk) {
         const newConfig = { ...config, users: config.users.filter(u => u.id !== id) };
+        await dbAPI.saveConfig(newConfig);
         setConfig(newConfig);
-        alert('تم الحذف بنجاح من قاعدة البيانات.');
+        alert('تم الحذف بنجاح.');
       }
       setIsSaving(false);
     }
@@ -105,10 +109,13 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
   return (
     <div className="min-h-screen bg-slate-950 text-white font-['Cairo'] pb-32 overflow-x-hidden" dir="rtl">
       {isSaving && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-center justify-center">
-          <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl border border-slate-800 flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="font-black text-rose-500 animate-pulse text-lg">جاري تحديث السحاب...</span>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[500] flex items-center justify-center">
+          <div className="bg-slate-900 p-10 rounded-[3rem] shadow-2xl border border-white/5 flex flex-col items-center gap-6">
+            <div className="w-12 h-12 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-center">
+              <span className="font-black text-rose-500 text-xl block mb-1">جاري مزامنة السحاب...</span>
+              <span className="text-slate-500 text-sm">يرجى عدم إغلاق الصفحة</span>
+            </div>
           </div>
         </div>
       )}
@@ -119,7 +126,10 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
             <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-rose-600/20 rotate-3">👑</div>
             <div>
               <h1 className="text-xl font-black tracking-tight">لوحة الإدارة</h1>
-              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Cloud Sync Active</p>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Cloud Connected</p>
+              </div>
             </div>
           </div>
           <button 
@@ -157,8 +167,8 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
           {activeTab === 'users' && (
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 space-y-6">
-                <div className="bg-slate-900/40 p-6 rounded-[2rem] border border-white/5">
-                  <h3 className="text-lg font-black mb-6 text-slate-400">قائمة الصفحات السحابية ({config.users.length})</h3>
+                <div className="bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-md">
+                  <h3 className="text-lg font-black mb-6 text-slate-400">قائمة العملاء ({config.users.length})</h3>
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                     {config.users.map(u => (
                       <div key={u.id} className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-rose-600/50 transition-all">
@@ -174,7 +184,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
               </div>
 
               <div className="lg:col-span-2">
-                <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8">
+                <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 backdrop-blur-md">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-rose-600/10 text-rose-500 rounded-2xl flex items-center justify-center text-2xl">✨</div>
                     <h2 className="text-2xl font-black">إضافة صفحة عميل جديد</h2>
@@ -185,7 +195,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest">اسم المهدى إليه</label>
                       <input 
                         type="text"
-                        placeholder="الاسم"
+                        placeholder="مثلاً: سارة"
                         className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none transition-all text-white font-bold"
                         value={editingUser.targetName}
                         onChange={e => setEditingUser({...editingUser, targetName: e.target.value})}
@@ -251,7 +261,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                     onClick={addUser}
                     className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl shadow-2xl shadow-rose-600/20 hover:scale-[1.02] active:scale-95 transition-all"
                   >
-                    حفظ ونشر الصفحة 🚀
+                    نشر وتخزين بالسحاب 🚀
                   </button>
                 </div>
               </div>
@@ -259,9 +269,8 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
           )}
 
           {activeTab === 'content' && (
-            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-4xl mx-auto">
-              <h2 className="text-2xl font-black">تعديل محتوى الصفحة الرئيسية</h2>
-              
+            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-4xl mx-auto backdrop-blur-md">
+              <h2 className="text-2xl font-black">محتوى الصفحة الرئيسية</h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-2 text-right">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest">العنوان الرئيسي</label>
@@ -272,7 +281,7 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   />
                 </div>
                 <div className="space-y-2 text-right">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">العنوان الفرعي (المتحرك)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">العنوان الفرعي</label>
                   <input 
                     className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold"
                     value={landingContent.heroSubtitle}
@@ -280,46 +289,23 @@ const AdminDashboard: React.FC<Props> = ({ config, setConfig, onLogout }) => {
                   />
                 </div>
               </div>
-
-              <div className="space-y-2 text-right">
-                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">نص زر الدعوة (Hero CTA)</label>
-                <input 
-                  className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold"
-                  value={landingContent.heroCta}
-                  onChange={e => setLandingContent({...landingContent, heroCta: e.target.value})}
-                />
-              </div>
-
-              <button 
-                onClick={handleLandingUpdate}
-                className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-emerald-700 transition-all"
-              >
-                تحديث المحتوى العام 💾
-              </button>
+              <button onClick={handleLandingUpdate} className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20">تحديث المحتوى الرئيسي 💾</button>
             </div>
           )}
 
           {activeTab === 'settings' && (
-            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-2xl mx-auto text-right">
-              <h2 className="text-2xl font-black">إعدادات النظام</h2>
-              
+            <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-white/5 space-y-8 max-w-2xl mx-auto text-right backdrop-blur-md">
+              <h2 className="text-2xl font-black">إعدادات الأمان</h2>
               <div className="space-y-4">
-                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">رمز دخول الإدارة الجديد</label>
+                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">كلمة سر الإدارة</label>
                 <input 
                   type="text"
                   className="w-full px-5 py-4 bg-slate-950 border border-white/5 rounded-2xl focus:border-rose-600 outline-none text-white font-bold text-center text-2xl tracking-[0.2em]"
                   value={newAdminPass}
                   onChange={e => setNewAdminPass(e.target.value)}
                 />
-                <p className="text-xs text-slate-500 font-bold">هذا الرمز هو الذي تستخدمه للدخول لهذه اللوحة. احفظه جيداً!</p>
               </div>
-
-              <button 
-                onClick={handlePasswordUpdate}
-                className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-600/20"
-              >
-                تغيير كلمة السر 🔒
-              </button>
+              <button onClick={handlePasswordUpdate} className="w-full py-5 bg-rose-600 text-white rounded-[1.8rem] font-black text-xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-600/20">حفظ الإعدادات 🔒</button>
             </div>
           )}
         </div>
